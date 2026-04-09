@@ -1,0 +1,72 @@
+[2026-04-08 01:08:02] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:13:14] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:16:07] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:16:07] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 01:20:54] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:20:54] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:20:54] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 01:21:00] stop_and_disconnect start guild=372242868376698880
+[2026-04-08 01:21:00] stop_and_disconnect success: disconnected via voice_client
+[2026-04-08 01:21:06] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:21:06] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:21:06] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 01:21:17] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:21:17] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:21:17] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 01:21:44] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:21:44] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:21:44] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 01:24:19] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:24:19] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:24:19] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 01:31:37] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:31:38] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:31:38] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 01:31:46] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:31:46] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:31:46] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 01:36:25] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:36:25] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:36:25] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 01:38:10] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:38:10] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:38:10] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 01:38:35] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:38:35] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:38:35] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 01:49:24] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 01:49:24] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 01:49:24] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 02:02:12] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:02:12] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:02:12] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 02:09:11] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:09:11] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:09:11] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 02:12:14] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:12:14] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:12:14] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 02:26:47] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:26:47] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:26:47] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 02:40:55] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:40:55] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:40:55] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 02:48:05] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:48:05] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:48:05] ensure_voice success: already connected channel=460258032295739392
+[2026-04-08 02:49:50] stop_and_disconnect start guild=372242868376698880
+[2026-04-08 02:49:50] stop_and_disconnect success: disconnected via guild.change_voice_state
+[2026-04-08 02:50:06] stop_and_disconnect start guild=372242868376698880
+[2026-04-08 02:50:06] stop_and_disconnect success: disconnected via guild.change_voice_state
+[2026-04-08 02:52:57] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:52:58] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:52:58] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 02:53:02] stop_and_disconnect start guild=372242868376698880
+[2026-04-08 02:53:02] stop_and_disconnect success: disconnected via voice_client
+[2026-04-08 02:53:07] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:53:07] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:53:07] ensure_voice success: connected to channel=460258032295739392
+[2026-04-08 02:58:37] ensure_voice start guild=372242868376698880 user=403028363532435458
+[2026-04-08 02:58:37] ensure_voice update: cleared self deaf in channel=460258032295739392
+[2026-04-08 02:58:37] ensure_voice success: connected to channel=460258032295739392

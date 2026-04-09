@@ -1,0 +1,988 @@
+Accelerated Graphics Port (AGP) An expansion slot designed to meet the need for
+increased graphics performance. Now outdated.
+acceptable use policy Written policies and procedures identifying actions that are
+appropriate on the system or network and the consequences for violating the policy.
+access control A set of rules that determines access, such as which traffic gets through a
+firewall and which traffic is blocked, who gets to access files or folders, or who can install
+applications.
+access control list (ACL) A set of rules that determines access, such as which traffic gets
+through a firewall and which traffic is blocked or who gets to access files or folders.
+accessibility Features built into most operating systems or web browsers to make it easier
+to use for those who have physical disabilities by providing ease-­ of-­ use enhancements.
+accounting The process of understanding what users did on a computer or network.
+Generally accomplished with the use of log files.
+activation Enabling a software application to function by entering in its product key.
+add-­ on tionality. Often called an extension.
+A piece of optional software added to a web browser to provide additional func-
+Advanced Encryption Standard (AES) Currently the most secure encryption available.
+Advanced RISC Machines (ARM) reduced instruction set computing (RISC).
+A type of processor that uses an architecture known as
+adware Malware that records activities for the purpose of targeting pop-­ up ads.
+AI assistants Automated response systems but can handle a broader range of topics or
+questions, as well as perform tasks such as playing music or setting reminders and alarms.
+AI chatbots Automated response systems designed to respond to specific questions or com-
+ments on a given topic, generally used for customer service.
+AI-­ generated code telling the AI what the code should do.
+Programming code created by AI, based on prompts from a developer
+AI-­ generated content describing what they want.
+Text or images created by an AI, based on prompts from a user
+Airplane mode A mode on a mobile device that disables wireless connections. In iOS, it dis-
+ables the cellular connection; in Android, it disables the cellular and Bluetooth connections.
+algorithm A process used for solving a problem or completing a task.
+American Standard Code for Information Interchange (ASCII) Codes that represent
+text and special characters on computers and telecommunications equipment. The standard
+ASCII codes use 7 bits to store information.
+Glossary 3
+Android the world.
+Mobile operating system created by Google; the most popular smartphone OS in
+application A program on a computer.
+archive bit File attribute that determines whether or not the file has changed since the last
+backup. If the bit is on, that means the file has changed.
+array In programming, a list of values; all of the elements in an array must be of the same
+data type, and arrays are predefined in size and do not change.
+artificial intelligence (AI) Technology that attempts to create computers or machines that
+can mimic human thought patterns, problem-­ solving ability, and intelligence.
+assembly language Low-­ level programming language used to access the hardware directly.
+attenuation The weakening of a signal due to distance or obstructions.
+attributes Properties or characteristics of an object or file.
+augmented reality Technology that superimposes a computer-­ generated image or data on
+a screen, over the current reality the user sees.
+authentication credentials.
+A process by which a computer system verifies that a user has the proper
+authentication, authorization, and accounting (AAA) A framework for defining access
+control that ensures the system knows who has logged on, what access that user has, and
+what actions the user attempted or completed.
+authorization user is allowed to take.
+In the AAA access control model, authorization defines what actions the
+autofill A feature that automatically populates fields in a form on a web page for you, such
+as your name, address, or credit card information.
+automatic update A process by which the operating system searches its manufacturer’s
+website for software updates and downloads (and possibly installs) them automatically.
+availability Resources are able to be accessed when the users need them.
+B
+backdoor A method used to log into a system by bypassing normal security methods.
+backside bus (BSB) The optional communications pathway between the Northbridge and
+the cache controller. When the backside bus is absent, the cache controller communicates
+with the Northbridge over the front-side bus.
+backup The process of making a copy of files and folders on a computer.
+baseline A measure of the “normal” performance of your system or a component in the system.
+4 Glossary
+basic input/output system (BIOS) is the firmware that allows the computer to boot.
+The basic input/output system for an IBM- based PC. It
+BD- ROM standard DVD.
+A Blu- ray disc player; this optical disc format holds more information than a
+big data A newer term within data analytics that refers to large, unstructured databases
+and the suite of tools needed to analyze and visualize that data. The objective is to find mean-
+ingful patterns within the data that can be monetized.
+binary notational system Also known as base 2, it uses only the values 0 (off) and 1 (on).
+biometric devices Devices that authenticate users by scanning for one or more physical traits.
+Some common types include fingerprint recognition, facial recognition, and retina scanning.
+bit Short for binary digit, it is the smallest unit of data in computing, represented in the
+binary notation system as a 1 (on) or a 0 (off).
+bits per second (bps) A bit is a binary digit (a 1 or a 0). Bits per second (bps) is a measure
+of throughput that measures how bits are communicated in one second.
+Bluetooth pairing communication.
+The process of connecting two Bluetooth- based devices together for
+Blu- ray Disc (BD) An optical disc format that holds more information than a DVD or CD.
+Blue Screen of Death (BSOD) Also called a STOP error, an error generated by Windows
+when a fatal system error occurs. It features a blue screen with the word STOP followed by
+an error message that can help in troubleshooting.
+bookmarks by the user.
+In a web browser, the list of frequently visited or favorite websites designated
+Boolean data type A data type used in programming to designate true or false.
+branching Programming logic that uses if and else if statements.
+burner An optical drive so named because it employs a laser capable of intensities stronger
+than what are used to read discs. It uses the laser to write, or burn, content to the disc.
+bus A set of signal pathways that allows information and signals to travel between com-
+ponents inside or outside a computer. A computer contains three types of buses: the external
+bus, the address bus, and the data bus.
+byte Eight bits of data is a byte.
+C
+cable lock Physical security device that attaches a laptop (or desktop) computer to sur-
+rounding furniture, making it harder to steal.
+Glossary 5
+cable modem to the cable network.
+A device that while not technically a modem creates an Internet connection
+cable tester Device used to determine if a network cable is working properly.
+cache In a web browser, the storage area for temporary Internet files.
+cache memory A small, fast access storage area for frequently used data and instructions.
+capacitive touchscreens ister contact, such as a human fingertip.
+A touchscreen display that requires an electrical current to reg-
+captive portal An open wireless network connection; when users access it, they get a
+welcome page notifying them of the conditions of the network, including which behaviors
+are permitted.
+carcinogen An item that can cause increased risk of developing cancer.
+casting Projecting a movie or music from one device to another display device, allowing
+the casting device to be used for other purposes.
+CD-­ ROM A compact disc (CD) player.
+central processing unit (CPU) The main integrated circuit of a computer system, con-
+sisting of an array of millions of integrated circuits, which interfaces with almost all other
+components and runs application and system processes. Its purpose is to accept, perform cal-
+culations on, and eject numeric data. It’s considered the “brain” of the computer because it’s
+the part that performs the mathematical operations required for all other activity.
+certificate In relation to websites, also called a security certificate or an SSL certificate.
+Valid certificates allow websites to use the HTTPS protocol and identify them as legitimate
+websites.
+char A data type that consists of only one character.
+chipset between the buses and components.
+The set of controller chips that monitors and directs the traffic on the motherboard
+Chrome OS Chrome web browser.
+An operating system created by Google, based on a Linux kernel and the
+Chromebook A netbook computer running Chrome OS.
+Chromebox A desktop computer running Chrome OS.
+CIA triad A security framework that outlines data confidentiality, integrity, and availability.
+cipher text Encrypted text, as opposed to plain text that is easily readable.
+clean uninstallation associated with that application.
+Deleting a software application properly, including removing all files
+client computers Computers that access servers for information.
+6 Glossary
+client/server network A group of computers connected together on the same network,
+where some are designated as servers and others clients or workstations.
+client software Software that connects to a server or database to retrieve information.
+cloud backup data to the cloud.
+Cloud backup or cloud storage refers to tools that allow you to save your
+cloud computing net, to store files or run applications.
+A method by which users access remote servers, typically over the Inter-
+cloud storage service as opposed to on their local network.
+Service that allows users to store data on servers across the Internet
+CMOS battery unplugged.
+A battery that provides power to the CMOS (or BIOS) chip that stores
+CMOS settings. A PC must retain certain settings when it’s turned off and its power cord is
+collaboration software Software designed to make it easy to work or communicate with
+other people. Examples include email clients, conferencing, online workspace, and document-sharing
+software.
+command-­ line interface (CLI) be managed. Also called the console.
+Text-­ based interface through which operating systems can
+community cloud interests.
+A cloud that is shared by several groups or companies with similar
+compact disc (CD) An unwritable and inerasable compact disc permanently pressed with
+digital data. A digital optical disc medium commonly capable of holding from 650 MB to
+700 MB of data, corresponding to 74 to 80 minutes of CD-­ quality audio, which is of higher
+quality than MP3 files.
+compiled programming language compiler to translate it into machine code.
+A programming language that requires the use of a
+compiler format for execution.
+An app that reads source code, analyzes it, and translates it into the proper
+complementary metal oxide semiconductor (CMOS) tings when the PC is turned off or unplugged. Contains the system BIOS.
+A chip used to retain system set-
+complex instruction set computing (CISC) A CPU architecture that minimizes the
+number of instructions per program, employed by Intel and Intel clones. It’s the opposite of
+reduced instruction set computing (RISC).
+compression Shrinking the size of a file when storing it on a hard drive or other media.
+conferencing software face
+virtual meeting over the Internet.
+A software application that allows for people to have a face-­ to-
+Glossary 7
+connection delay receiving a response.
+The amount of delay between sending a network data request and
+console Text-­ based interface through which operating systems can be managed. Also called
+the command line or Command Prompt.
+constant A data type that does not change and is fixed, as opposed to a variable.
+constraints the database.
+Limitations put on a system. In a database, constraints can be used to limit the
+type of data entered into a field. This can increase the reliability and accuracy of the data in
+containers In programming, they allow multiple values of similar types to be grouped
+together and accessed at the same time. Arrays and vectors are containers.
+contingency plan Plan of action to take in the event of a system failure or data breach.
+cookie uniquely identify the user.
+A plain-­ text file downloaded from a website to a computer that can be used to
+cookie consent from the end user.
+Before a website can download a cookie onto a device, it must get consent
+cookies uniquely identify the user.
+Plain-­ text files downloaded from a website to a computer that can be used to
+crash The failure of a software application to respond.
+crimper A tool used to fasten RJ45 connectors onto the end of copper twisted-­ pair cabling.
+critical data company monetizes.
+Data that is necessary for a company’s survival, and likely the data the
+D
+data analytics monetized.
+The process of studying data to identify patterns that could possibly be
+data at rest moved from one location to another.
+Data that is stored in a location, such as a hard drive, and that is not being
+data availability Data is available to all users at any time of day and regardless of location.
+data correlation Analytical process of trying to identify meaningful patterns between two
+data points. For example, if two data points generally increase (or decrease) together at the
+same time, they are positively correlated. If one goes up and another goes down, they are neg-
+atively correlated.
+data in transit server to a client computer.
+Data that is being moved from one location to another, such as from a web
+8 Glossary
+data monetization Using data as an asset to make money.
+data persistence Data is available even if the device loses power. For example, hard drives
+exhibit data persistence, whereas RAM does not.
+database dump An export of all data within a database.
+database management system (DBMS) such as SQL.
+The software that manages a database,
+decimal notational system numerals 0 through 9.
+Also known as base 10, it’s the numbering system that uses the
+dedicated server A server that performs only server functions.
+default gateway not on the local segment.
+The router to which all packets are sent when the destination computer is
+default search engine The service used to search the Internet, set up automatically in the
+web browser. Examples include Google and Bing.
+denial of service (DoS) unable to respond to legitimate requests.
+An exploit where the attackers flood a server or system, making it
+Department of Defense (DoD) model A four-­ layer networking model on which the basis
+for the TCP/IP protocol suite was developed. Also known as the TCP/IP model.
+device driver Also called a driver.
+Software that allows a device to communicate with the operating system.
+device hardening number of vulnerabilities.
+Tasks a user completes to help protect a computer by reducing its
+digital subscriber line (DSL) speed
+Internet.
+A technology that uses regular telephone lines to carry high-digital video disc (DVD) An unwritable and inerasable digital video disc permanently
+pressed with digital data. A digital optical disc medium commonly capable of holding from
+4.7 GB to 8.5 GB of data per side, corresponding to two to four hours of uncompressed
+DVD-­ quality video.
+Digital Visual Interface (DVI) A digital video interface standard that includes support for
+analog monitor interfaces in the DVI-­ A standard or one or two links of digital transmission
+in the DVI-­ D standard. There is also a DVI-­ I (the I stands for integrated) that has the ability
+to support both standards.
+disaster recovery The plan to restore access to systems and data after a disaster strikes.
+discretionary access control An access control method where users have the ability to set
+security permissions to the files and folders they own.
+Glossary 9
+DisplayPort A digital video interface standard created in 2008 by the Video Electronics
+Standards Association (VESA); it was designed to be an industry standard and replace VGA
+and DVI. It’s also backward compatible with VGA and DVI by using adapters.
+distribution A version of Linux, which is a combination of the Linux kernel, a shell, shell
+utilities, a desktop environment, and desktop utilities.
+document database A database where each record and its associated data is considered a
+document.
+Domain Name System (DNS) addresses.
+Service installed on a server that resolves host names to IP
+driver a device driver.
+Software that allows a device to communicate with the operating system. Also called
+dual inline memory module (DIMM) A memory module packaging style that features a
+circuit board with independent pins on both sides of the module’s card edge.
+dumpster diving information.
+Going through the garbage to obtain confidential or sensitive
+DVD-­ ROM A DVD player.
+Dynamic Host Configuration Protocol (DHCP) TCP/IP configuration information to clients.
+Service on a router or server that assigns
+dynamic memory cally refreshed.
+A type of memory that loses its data rapidly if it isn’t constantly electri-
+E
+eavesdropping are not supposed to hear.
+An attack on security when the attacker listens in on conversations they
+electromagnetic interference (EMI) The interference that can occur during transmissions
+over copper cable due to electromagnetic energy outside the cable. The result is degradation
+of the signal.
+embedded operating system cally only being responsible for a single task.
+An operating system designed to be small and efficient, typi-
+encryption the file contents.
+Converting files so that their content is scrambled if someone tries to browse
+end-­ user license agreement (EULA) use limitations of software.
+The agreement the user acknowledges outlining the
+e-­ reader A mobile device designed for reading books, newspapers, magazines, and other
+periodicals. Uses electrophoretic ink (E Ink).
+10 Glossary
+Ethernet connector Another name for an RJ45 twisted pair connector.
+executables File types that open an application.
+expansion slot One of the arbitrary insertion points in an expansion bus, based on a
+specific technology— PCIe, for example.
+extension The end of the filename that starts with a period. Examples are .doc , .exe ,
+.docx , .xls , .xlsx , and .tiff . Also called a file extension.
+external flash drive A small, portable nonvolatile storage device (basically a miniature hard
+drive) that is located outside the computer case. Usually connects to the computer via a USB port.
+external hard drive puter case.
+A hard drive (either HDD or SSD) that is located outside the com-
+External Serial ATA (eSATA) A now obsolete external interface for the attachment of
+SATA devices that requires a shielded cable and different connector from the one used with
+an internal SATA attachment.
+F
+fault tolerance tional computer.
+The ability to suffer the loss of a component and yet still have an opera-
+fiber- optic A type of cable consisting of thin flexible glass fiber surrounded by a rubberized
+outer coating. Uses an ST, SC, or LC connector.
+Fiber- to- the- Home (FTTH) Fiber- optic broadband service delivered directly to a residence.
+fields The term used in databases to refer to columns of data.
+field-replaceable unit (FRU) end user.
+A computer part that is replaceable by a field technician or
+file A collection of data that has its own name.
+file backup than that of the original data.
+A copy of user data, either one or more files or folders, in a different location
+file extension The end of the filename that starts with a period. Examples are .doc ,
+.docx , .xls , .xlsx , .exe , and .tiff . Also called an extension.
+file server A server used to hold user files.
+file system The organizational scheme that governs how files are stored and retrieved from
+a disk. Examples include FAT, NTFS, APFS, and ext4.
+File Transfer Protocol (FTP) file transfers. It uses ports 20 and 21.
+A protocol in the TCP/IP protocol suite that is optimized for
+Glossary 11
+firewall A form of protection that can be either a stand-­ alone system or included in other
+devices, such as routers or servers. You can find firewall solutions that are marketed as
+hardware-­ only and others that are software-­ only. Either way, their role is to limit the traffic
+in (or out) of the network.
+firmware The name given to any software that is encoded in hardware, usually a read-­ only
+memory (ROM) chip, and can be run without extra instructions from the operating system.
+first-­ party cookie A small text file (cookie) downloaded from a website that contains
+information regarding a user on a specific website. Can be used to remember usernames as
+well as site preferences.
+flash drive similar to writable floppy disks.
+A small, portable USB storage device made of nonvolatile solid-­ state memory,
+flashing the BIOS The act of changing the system firmware in a computer, often for the
+purpose of upgrading to a higher version to support new hardware that the older version
+does not support.
+flat file The name given to a data file that has only two dimensions, such as a worksheet.
+floats In programming, a data type that allows for numbers with a decimal place.
+flowchart A visual depiction of a process or workflow.
+foreign key One or more columns in a table that refer to the primary key in another table.
+form factor The size and shape of a component. For example, AT and ATX are two form
+factors for motherboards, and M.2 and 2.5″ are SSD form factors.
+forms in tables.
+Objects within a database that allow for the easy input and modification of data
+freeware Software that is provided free of use from the developer.
+front-­ side bus (FSB) The high-­ speed bus controlled by the Northbridge on which RAM,
+cache (in the absence of the backside bus [BSB]), PCIe slots, AGP slots, and other local-­ bus
+components are interconnected with the CPU and, in some cases, each other.
+function (Fn) key Key marked with the letters Fn that produces particular functions when
+pressed and held while pressing a key marked with an alternate function.
+functions Sections of reusable code.
+G
+gaming console Computing device used specifically for playing computer games, but it
+can also be used to watch videos or connect to the Internet.
+12 Glossary
+General Data Protection Regulation (GDPR) including personally identifiable information (PII).
+European Union law protecting user data,
+generative AI puter code.
+Artificial intelligence that can create content such as text, images, or com-
+gesture-­ based interaction phone movements.
+Using a mobile device through a series of finger gestures and
+gigabits per second (Gbps) A throughput unit representing one billion bits per second.
+gigabyte (GB) One billion bytes of data.
+gigahertz (GHz) per second.
+A hertz is one electronic cycle per second. A gigahertz is one billion cycles
+Google Play Store The Google app store where you find apps, games, movies, and music.
+graphical user interface (GUI) An interface that users use to interact with the computer; it
+contains pictures instead of just text and can be navigated with a mouse.
+graphics processing unit (GPU) A processor, much like a central processing unit (CPU)
+for the computer, located on a video card and specifically designed for video.
+guest operating system An operating system, such as Windows, macOS, or Linux, that
+resides and works within a virtual machine.
+H
+hacking puter system or its data.
+A variety of computer crimes that involve gaining unauthorized access to a com-
+hard disk drive (HDD) A nonvolatile disk drive that contains magnetically coated platters
+in a sealed case and is often used as the main secondary-­ storage medium.
+hard drives See hard disk drive (HDD).
+hardware failure board, stops working.
+When a piece of hardware, such as a motherboard, hard drive, or key-
+headset communication.
+A peripheral device with speakers and a microphone that allows for two-­ way
+heat sink A block of aluminum or other metal, with veins throughout or fins, that sits on
+top of a heat-­ producing component, drawing its heat away.
+hexadecimal notational system through 9 and the letters A through F.
+A base 16 notational system, which uses the numerals 0
+High-­ Definition Multimedia Interface (HDMI) A digital video interface standard intro-
+duced in 2002, which is commonly used by computers as well as television sets.
+Glossary 13
+home assistants Voice-­ controlled devices that allow for the management of IoT devices as
+well as perform tasks such as setting reminders, providing notifications, and playing music.
+host Any computer or device on a TCP/IP network that has an IP address. In virtualization,
+the machine that is providing resources to the virtual machines.
+hybrid cloud that owns it and on the Internet.
+A cloud that has components in two places: on-­ premises for the company
+Hypertext Markup Language (HTML) A standardized markup language for the transfer
+and rendering of web pages with their associated elements.
+Hypertext Transfer Protocol (HTTP) An insecure protocol in the TCP/IP protocol suite
+that is used for communication between a web server and a web browser and is optimized
+for Internet content such as text, pictures, videos, and hyperlinks. It uses port 80.
+Hypertext Transfer Protocol Secure (HTTPS) A combination of HTTP with Secure
+Sockets Layer (SSL) to create a secure connection. It uses port 443 by default.
+hypervisor Software that allows multiple operating systems to share the same host, and it
+also manages the physical resource allocation to those virtual OSs.
+I
+identifiers In programming, names assigned to a program element. Identifier types include
+variables (which can change) and constants (which are static).
+impersonation Pretending to be someone or something that you are not. A tactic used to
+gain unauthorized access to systems or files.
+infrared (IR) light waves.
+A short-­ distance wireless communications standard that uses nonvisible
+infrastructure as a service (IaaS) hardware) as the solution.
+Cloud service level that provides infrastructure (virtual
+ink cartridge A reservoir of ink and a printhead in a removable package.
+inkjet printers A type of sprayed-­ ink printer. Sometimes called a bubble-­ jet.
+inoculating The process of running an antivirus program on a computer.
+instant messaging to another.
+Software that allows a text message or image to be sent from one user
+integer In programming, a data type that specifies a whole number (one without decimals).
+integrated development environment (IDE) that contains a code editor, compiler, and debugger all in one.
+A software package for software developers
+14 Glossary
+Integrated Drive Electronics (IDE) A nickname for the original ATA standard, now known
+as parallel ATA (PATA) since the advent of serial ATA (SATA).
+integrity In a security framework, it ensures that the data is true and correct.
+interference When unintended wireless signals conflict with the intended ones, causing dis-
+ruption in communications or communication speed.
+Internet of Things (IoT) other and exchange data.
+The global network of devices able to communicate with each
+Internet Message Access Protocol (IMAP) email and uses port 143.
+A protocol in the TCP/IP suite that receives
+Internet Protocol (IP) security cameras Protocol (IP) configuration information.
+Security devices, part of the IoT, that use Internet
+Internet service provider (ISP) A company that provides access to the Internet.
+interpreted programming language A programming language in which each line of code
+is read by an interpreter every time the program is executed.
+iOS Mobile operating system developed by Apple and used in iPhones.
+IP address A numerical designation that uniquely identifies a device on a network.
+iTunes app store The Apple app store, where you find apps, games, movies, and music.
+J
+journaling A file system feature by which file changes are also written to a special file
+called a journal. Journaling results in a more fault-­ resistant file system.
+K
+keyboard with the characters that they represent.
+keylogger remote user.
+key-value database kilobits per second (Kbps) per second.
+The most common computer input device for entering text with buttons labeled
+Malware that records all keystrokes and sends the information to a file or a
+A database where data is represented as a collection of key-value pairs.
+A throughput unit of measure representing one thousand bits
+Glossary 15
+kilobyte (KB) kinetics One thousand bytes of data.
+A sense of motion. Mobile devices often have kinetic sensors to detect motion.
+L
+L1 cache which it ’ s dedicated.
+Cache memory that is smallest and the fastest and closest to the processor core to
+L2 cache Cache memory that is larger and slower than L1 cache and not as close to the
+processor. It ’ s usually, but not always, dedicated to one processor core.
+L3 cache tiple cores within a processor.
+The largest and slowest cache memory bank, which is often shared between mul-
+laser printer An output device that uses a laser, a drum, and powdered toner to create
+printed images on paper or other materials.
+latency The amount of delay between sending a network data request and receiving a response.
+least privilege model The security principle by which users should be granted access only
+to the resources they need and nothing more.
+legacy browsers Internet browsers that are not the most up- to- date version.
+license agreement manufacturer of the software.
+The right to use the application in a limited way as prescribed by the
+light- emitting diode (LED) monitor An LCD monitor that uses light- emitting diodes
+(LEDs) instead of fluorescent bulbs as a backlight.
+Lightning A proprietary connector developed by Apple and used on iPhones and iPads.
+Linux An open source operating system kernel developed by Linus Torvalds in 1991.
+liquid cooling A cooling method used to keep CPUs and other hot- running components
+from overheating by pumping a liquid from outside the system through tubing that leads to
+blocks that mount to the components like heat sinks.
+liquid crystal display (LCD) monitor A video display unit that uses a liquid crystal display
+(LCD) panel to form the pixels corresponding to the image to be displayed.
+local area network (LAN) Groups of computers and associated peripherals connected
+by a communications channel and capable of sharing files and other resources among sev-
+eral users.
+logical schema For a database, it ’ s the layout of the tables and connections.
+looping In programming, it ’ s logic that uses the while command.
+16 Glossary
+M
+macOS Operating system created by Apple and used on its laptop and desktop computers.
+macros Programs developed within databases or spreadsheets to execute specific tasks.
+malware exploits, and worms.
+A broad term used for many attacks on computer systems, such as viruses,
+mandatory access control The most restrictive access control method, which stipulates
+that all objects on the computer or network will have their security managed by a system
+administrator, including any files that a user may create on the system.
+markup language A programming language used for formatting and presentation.
+An example is the Hypertext Markup Language (HTML), which is used extensively in
+web pages.
+meaningful reporting audience.
+The process of translating data into insights and action for an
+Media Access Control (MAC) Hardware address built into all network cards.
+megabits per second (Mbps) per second.
+A throughput unit of measure representing one million bits
+megabyte (MB) One million bytes of data.
+megahertz (MHz) cycles per second.
+A hertz is one electronic cycle per second. A megahertz is one million
+memory be accessed quickly.
+A small, temporary storage space used by the computer to hold data that needs to
+memory bus central processing unit (CPU).
+The electrical path on a motherboard between the memory (RAM) and the
+memory card A small portable storage device made of nonvolatile solid-­ state memory;
+commonly used in digital cameras and mobile gaming devices.
+metadata In nonrelational databases, metadata is text data that describes objects, such as
+words used to describe a picture in order to make it searchable.
+methods In programming, methods are reusable object code.
+mirroring one display are shown on the other.
+Showing the exact same image on two display devices. All actions performed on
+mobile hotspot Using a smartphone or other cellular-­ enabled device to allow other com-
+puters to connect to the Internet through it.
+Glossary 17
+modem A device used to provide Internet access through the analog phone line. At the
+source, it takes a digital signal and converts (modulates) it to analog and then from analog
+back to digital (demodulates) at the destination device.
+modules In databases, modules let the administrator automate tasks, much like a macro would.
+monitor Another name for a display, or an output device that shows video images.
+motherboard attached.
+A circuit board to which all computer components are directly or indirectly
+mouse A common input device that uses one of various tracking mechanisms to detect its
+movement over a surface by the user’s hand.
+multifactor authentication (MFA) Requiring multiple pieces of information for a user to
+log in. Generally speaking, in addition to a username, multifactor authentication requires
+users to provide two or more pieces of information out of these four categories: something
+the user knows, something the user has, something the user is, or somewhere the user is.
+multifunctional printer or faxing.
+A printer that has additional capabilities built in, such as scanning
+multiple concurrent users base at one time.
+In databases, allows multiple people to actively use the data-
+N
+near-­ field communication (NFC) A short-­ range communication technology that lets users
+hold their phone next to someone else’s and transfer data or bump their phone to a receiver
+at a store to pay for a purchase.
+network-­ attached storage (NAS) Storage, such as hard drives, attached directly to a net-
+work for the purpose of storing data for clients on the network, like a file server.
+network interface card (NIC) In networking, the PC expansion board that plugs into a
+personal computer or server and works with the network operating system to control the
+flow of information over the network. The network interface card is connected to the net-
+work cabling (twisted-­ pair, coaxial, or fiber-­ optic cable), which in turn connects to another
+network card or central connectivity device.
+noncritical data loss to the company or person.
+Data, that if lost, is easily replaceable and may not result in catastrophic
+nondedicated server A server that also is used as a workstation by a user.
+nonrepudiation that an event happened.
+A security mechanism in place to make it impossible for a user to deny
+18 Glossary
+nonstructured data In databases, data that is not text or numbers. Nonstructured data is
+not easy to catalog or search because it does not have defined parameters.
+nonvolatile memory Memory that does not lose its contents when the power is turned off,
+such as hard disk drives (HDDs) and solid-­ state drives (SSDs).
+nonvolatile memory express (NVMe) A solid-­ state drive (SSD) technology that greatly
+improves the data transfer rates over previous standards.
+O
+objects ried or called upon to perform a task.
+In programming, collections of attributes, properties, and methods that can be que-
+octal notational system A base 8 notational system, which uses the numerals 0 through 7.
+octet A group of 8 bits.
+offline storage server or in the cloud.
+In databases, it refers to data stored on a local PC rather than stored on a
+online storage In databases, it refers to a database stored in the cloud.
+online workspace Internet.
+Software that allows users to edit the same file at the same time over the
+on-­ path attack An attack where the attacker secretly places something (such as a piece of
+software or a rogue router) between a server and the client, and neither party is aware of it.
+The on-­ path software intercepts data and then sends the information back and forth as if
+nothing is wrong.
+on-­ premises cloud clients.
+A cloud that is local to one company and not shared among other
+open source be modified by any user.
+A name given to the type of computer code that is shared freely and that can
+operating system (OS) Software designed to provide an interface between the computer
+hardware and the user, coordinate hardware components, provide an environment for soft-
+ware to run, display file and directory structure, and monitor system health.
+optical drive and CD-­ ROM.
+A device used to read an optical disc. Examples are BD-­ ROM, DVD-­ ROM,
+original equipment manufacturer (OEM) website software program. Legitimate site to download the software from.
+Website owned by the developer of a
+Glossary 19
+P
+Parallel Advanced Technology Attachment (PATA) hard drive standard, since the invention of Serial ATA (SATA).
+The newer name for the original IDE
+parallel port A legacy port and cable-­ connector pairing based on a DB25 interface most
+commonly used for attaching a printer to a computer.
+partition Logical division of hard drive space.
+password cracking access to a computer system.
+Attempts made to guess passwords in an effort to gain unauthorized
+password expiration of time.
+Policy that states a password will expire after a certain period
+password manager various systems or websites.
+Software application that securely manages multiple passwords across
+patching Downloading and installing new updates to software.
+PCI Express (PCIe) A high-­ performance serial local-­ bus slot architecture that obviates the
+need for AGP and PCI slots. PCIe supports combining the resources of multiple adapters for
+higher performance.
+peer-­ to-­ peer network a network with no server.
+A group of computers, all considered equals, connected together on
+Peripheral Component Interconnect (PCI) A popular expansion slot architecture invented
+by Intel that succeeded the ISA slot and that is succeeded by PCIe.
+permissions on a file or folder.
+Also known as security settings, they define what actions a user can perform
+perpetual license Software license that allows the user to use the application indefinitely.
+personal computer (PC) laptop or desktop.
+A computing device intended for home or personal use, such as a
+personal health information (PHI) Information that relates to an individual’s health, such
+as blood pressure, medical history, and prescription information.
+personally identifiable information (PII) Anything that can be used to identify an
+individual person on its own or in context with other information.
+petabyte (PB) One quadrillion bytes of data.
+20 Glossary
+phishing A form of social engineering in which you simply ask someone for a piece of
+information you are missing by making it look as if it is a legitimate request. Commonly sent
+via email. Any electronic activity designed to defraud someone.
+physical schema the database management software.
+The layout of a database, specifically the actual tables that are created in
+piconet seven other devices in one piconet.
+A Bluetooth network. A Bluetooth-­ enabled device can communicate with up to
+plain old telephone service (POTS) Standard telephone service, as opposed to other con-
+nection technologies like a Digital Subscriber Line (DSL).
+plain text being encrypted like cipher text.
+Data in transit or at rest that is stored in easily readable text, as opposed to
+platform as a service (PaaS) grammer development tools to clients.
+Cloud service that provides infrastructure as well as pro-
+plug-­ and-­ play A Windows feature; when a new hardware device is installed, Windows will
+automatically install the driver (if available) and configure the device for immediate use.
+point stick A laptop pointing device built into the middle of the keyboard.
+pointing device trol the cursor on a screen.
+An input device, such as a mouse or touchpad, that allows a user to con-
+pop-­ up An extra, usually small browser window that appears automatically when users
+display a certain web page or click a certain button on a page.
+pop-­ up blocker appearing.
+Software built into a web browser that prevents pop-­ up windows from
+port In hardware terms, the physical location where a cable plugs in. In TCP/IP terms, the
+channel over which the Process/Application layer protocol communicates.
+POST card A circuit board you insert into an open slot in the motherboard or a USB port
+that displays a two-­ digit numeric code on its LED to tell you where the system is in the boot-
+ing process.
+Post Office Protocol 3 (POP3) port 110.
+A protocol in the TCP/IP suite that receives email and uses
+power button In today’s computers, a physical switch that can be configured to perform
+multiple functions, such as power the computer on/off and put it into sleep mode, based on
+the length of time it is held.
+power-­ on self-­ test (POST) Part of the boot process controlled by the BIOS that verifies
+the working condition of the hardware the BIOS knows about and hands off the boot pro-
+cess to the boot device.
+Glossary 21
+power outage unplanned.
+When the electricity supply to a computer is cut off; usually this is
+power supply unit (PSU) power supply.
+The device in a computer that provides the power, also called a
+predictive AI based on past behavior.
+Artificial intelligence that is capable of projecting future actions or behaviors,
+preshared key (PSK) router use the same security passphrase.
+A security standard where all clients connecting to the server or
+primary key uniquely.
+In a database table, one or more fields whose data is used to identify a record
+print server can send print jobs.
+A server computer that has printers logically installed on it to which clients
+printed circuit board (PCB) An electronic circuit board used in computers that has connec-
+tivity paths integrated for component communication.
+printer puter onto paper.
+An electromechanical output device that is used to put information from the com-
+privacy authorized to do so.
+In data security, keeping data from being seen or accessed by someone who is not
+privacy screen screen filter.
+A cover over a monitor screen that directs light from it at a restricted angle
+so that anyone who isn’t viewing it straight on won’t be able to read it clearly. Also called a
+private browsing Also known as incognito mode or private mode, a feature available in
+most web browsers that allows users to browse the Internet without leaving any traces of
+their online activity on their system or device.
+private cloud A cloud that is local to one company and not shared among other clients.
+process The name for a task running on a computer.
+product key or use the application.
+A unique code that comes with purchased software that allows you to install
+productivity software Programs that help you get your work done faster, such as spread-
+sheets, word processing, email, or presentation software, and visual diagramming.
+profile synchronization Linking a user’s profile, in the web browser, to an email account.
+The user can log in from any device and access the same profile settings.
+projector interfaces onto a screen.
+An output device that uses a light source to display an image input to one of its
+properties In programming, properties describe the characteristics of an object.
+22 Glossary
+proprietary software Apps developed by a company that retains the code and does not
+allow it to be modified. Usually requires a software license to operate the software.
+protocol In networking and communications, the specification that defines the proce-
+dures to follow when transmitting and receiving data. Protocols define the format, timing,
+sequence, and error-­ checking systems used.
+protocol analyzer network traffic and analyze its contents.
+A network administration tool that allows administrators to capture
+PS/2 port A six-­ pin mini-­ DIN connector named after the second generation of IBM
+personal computers and still occasionally seen today, trailing behind USB in popularity, for
+mouse and keyboard attachment.
+pseudocode Programming code that is written in human-­ readable format, such as com-
+ments within code to help other programmers understand what the code does.
+public cloud among companies.
+A cloud that is accessed via the Internet, and whose resources may be shared
+Q
+queries query language data from a database.
+Requests made to retrieve data, typically from a database.
+The language, such as Structured Query Language (SQL), used to retrieve
+R
+radio frequency (RF) A form of short-­ distance wireless networking transmission.
+radio frequency (RF) broadband Internet provided by cell phone providers.
+Internet connection using cellular frequencies,
+RAID Redundant Array of Independent (or Inexpensive) Disks. A form of fault tolerance in
+all but one version that allows the loss of at least one drive without compromising data.
+RAID 0 The only type of RAID that is not fault tolerant, RAID 0 provides striped volume
+sets on two or more drives that allow for larger volumes than one drive alone can provide.
+When one or more drives are lost, all data is compromised.
+RAID 1 A fault-­ tolerant type of RAID that provides mirroring and duplexing. Two and only
+two drives exist in a mirrored set. The loss of either drive does not compromise data.
+RAID 5 A fault-­ tolerant type of RAID that combines striped sets with distributed parity
+across all drives in the set. A minimum of three drives is required, and the loss of any one
+drive does not compromise data.
+Glossary 23
+random access memory (RAM) A temporary, volatile storage area used by the computer
+to access data quickly. Data in RAM is lost when the computer loses power.
+ransomware ware removed from the system.
+Malware that attempts to get the infected user to pay money to have the mal-
+read-­ only memory (ROM) written to.
+Memory in the computer that can only be read but not
+rebooting Physically turning the computer off and then turning it back on.
+record A row of unique data within a database.
+reduced instruction set computing (RISC) A CPU architecture that minimizes the cycles
+per instruction. It’s the opposite of complex instruction set computing (CISC). RISC chips
+can be made smaller and produce less heat, and so they are more suited for smaller mobile
+devices.
+redundancy A duplicate system or data set for use in case of hardware failure or data loss.
+refresh rate hertz (Hz).
+On a display, how fast the screen is redrawn every second. Measured in
+registered jack 11 (RJ11) an RJ11 connector.
+A connector type for twisted-­ pair cabling. Telephone cabling uses
+registered jack 45 (RJ45) A connector type for copper twisted-­ pair cabling.
+registering Providing your name and contact information to the software manufacturer.
+relational database (records) and columns (fields).
+A software program that stores data in tables, organizing it into rows
+relational database management system (RDBMS) a relational database.
+The software program that manages
+remote support Software that allows a technician or other support staff to connect
+remotely to a computer over the Internet, making it easier to troubleshoot and fix problems.
+replay attack the intent of using it later.
+A type of attack where the attacker captures information from a sender with
+replication A full working copy of the data, computer, or network.
+reports In a database, reports are queries that have been saved to be run later and are usu-
+ally formatted to produce a professional look rather than showing just raw data.
+reseating and reconnecting the chip or cable.
+Opening the case and pressing down on each socketed chip, or disconnecting
+resistive touchscreens that from a stylus or a fingernail.
+A touchscreen that requires pressure to register a contact, such as
+24 Glossary
+resolution The number of rows and columns that a display unit is capable of representing.
+restore point A backup copy of the important system configuration files created once a
+day (by default) by the System Restore utility.
+reverse engineering Deconstructing code so you can understand its intent and purpose.
+role-­ based access control Security model where user accounts are assigned to roles to
+determine what they can access. Permissions are granted to roles only, not individual user
+accounts.
+rootkits Software programs that have the ability to obtain root-­ level (administrative)
+access and hide certain things from the operating system.
+router addresses.
+A networking device that separates networks and directs traffic based on logical IP
+rule-­ based access control Security model where permissions are determined based on
+rules that are established in an access control list (ACL).
+S
+Safe Mode A low-­ functionality troubleshooting mode that bypasses all optional com-
+ponents, both hardware and software, loading only the minimum required to display the
+desktop.
+satellite Internet A type of Internet connection that uses a satellite dish to receive data
+from a satellite and a relay station that is connected to the Internet.
+scalability The ability to have very small or very large access, or any size in between. Data-
+base servers such as Microsoft SQL and Oracle are extremely scalable, allowing access to
+hundreds or tens of thousands of users at a time. Enterprise versions of database software
+also allow databases to stretch between on-­ site servers and the cloud, with the most recent
+data being available on-­ site.
+schema queries, and data types allowed.
+The rules and structure of the database. It defines the tables, forms, reports,
+screened subnet servers.
+A semi-­ public network segment located between a perimeter router
+and an internal router on your network. Used for web servers, FTP servers, and email relay
+scripting languages A programming language designed to create simple programs that
+execute a list of tasks or get data from a dataset.
+secure digital (SD) card cameras.
+A standard of small memory card commonly used in digital
+Glossary 25
+semi-­ structured data easier to catalog and search.
+Unstructured data that has been tagged with metadata, making it
+sequence single task.
+In flow charting, a sequence describes multiple steps needed to accomplish a
+Serial Advanced Technology Attachment (SATA) The latest version of the standard that
+specifies IDE (PATA) but that uses only a single serial pathway for communication instead of
+multiple parallel pathways as PATA uses.
+serial number sion number.
+Identifier of a piece of software, usually indicating the program and ver-
+serial port connector.
+A computer interface that transmits one bit at a time, also known as an RS-­ 232
+servers Computer with the responsibility of fulfilling requests from client computers.
+service A function provided by a server to client computers.
+service outage computers.
+When a server is unable to provide specific functionality to client
+service set identifier (SSID) The unique name of a wireless network that differentiates it
+from other wireless networks that are also in range of a wireless client.
+shareware Software distributed free of charge for a limited number of uses; then, if the
+user wants to continue using it, they must purchase it.
+shell The command interface of an operating system.
+shortcut A small file used as a pointer to the target file’s real location.
+shoulder surfing sensitive data.
+Watching someone when they enter their username, password, or other
+signature In computer security, a trait or characteristic of a virus used to identify the virus.
+It can also mean a person’s physical or digital signing of a document, used for nonrepudia-
+tion purposes.
+Simple Mail Transfer Protocol (SMTP) email and that uses port 25.
+A protocol in the TCP/IP suite designed to send
+single-­ factor authentication (such as a password) to log into a system.
+When users are required to enter in only one security factor
+single sign-­ on (SSO) An authentication system that gives users access to all of the applica-
+tions and systems they need with one initial login when they log on.
+small form-­ factor pluggable (SFP) work cable.
+A connector used at the end of a fiber-­ optic net-
+26 Glossary
+small outline DIMM (SODIMM) A small form-­ factor memory module based on dual inline
+memory module (DIMM) principles and designed for the mobile computing sector.
+smart TV A television that has built-­ in Internet and apps.
+smartphone touchscreen and Internet access.
+A mobile telephone device closely resembling a small computer, usually with a
+snooping them for useful information.
+An attack where a protocol analyzer is used to capture data packets and examine
+social engineering An attack in which people are deceived or manipulated into revealing
+information the attacker can use to access data they shouldn’t access.
+software as a service (SaaS) Cloud service level that provides infrastructure, programmer
+development tools, and software applications to clients.
+software piracy The illegal copying and distribution of software.
+solid-­ state drive (SSD) A nonvolatile storage device that has no moving parts but uses
+flash memory to emulate a conventional hard disk drive.
+sound card An adapter or component that provides audio output from a device.
+source code ming language.
+The original programming code written for a program, in its native program-
+spam Unwanted junk email or unsolicited email or texts.
+speaker Computer peripheral that produces sound.
+spoofing users’ information.
+Creating a website that masquerades as a legitimate secure site but actually steals
+spyware Software that records your computer usage. A keylogger is one example.
+SSL certificate identifies them as legitimate websites.
+Security certificate that allows websites to use the HTTPS protocol and
+static memory Memory that does not change, nor is it lost when the computer loses power
+(as opposed to dynamic memory, which is lost when the computer loses power).
+STOP error Also called a Blue Screen of Death, an error generated by Windows when a
+fatal system error occurs. It features a blue screen with the word STOP followed by an error
+message that can help in troubleshooting.
+string sentence.
+In programming, a data type that specifies multiple characters, such as a word or a
+strong password and unusual.
+A password that is difficult for someone to guess; usually is long, varied,
+Glossary 27
+structured data and columns.
+Information that is stored in tables in a relational database, using rows
+subnet mask The value used to determine the subnet on which a host resides.
+subscriber identity module (SIM) cellular network the device can participate in.
+Microchip included in mobile devices that identifies the
+subscription of time.
+Software license that allows the user to use it for a specific, limited amount
+switch workstations, servers, and printers.
+A network connectivity device used to connect multiple devices together, such as
+system backup Backing up files on a hard drive that includes operating system files, which
+can be used to restore the entire system in the case of failure.
+system board Another name for a motherboard.
+System Configuration utility Also known by its executable filename of MSCONFIG, it’s a
+utility that allows Windows users to disable certain applications and services selectively that
+automatically load at startup.
+system image A backup of all files on a hard drive, including user data and operating
+system files, which can be used to restore the entire system in the case of failure.
+system restore The Windows utility that automatically (or manually) creates restore points.
+T
+table The name of a set of rows/records and fields/columns in a database.
+tablet A small, portable computing device larger than a smartphone but generally smaller
+than a laptop. It does not have a built-­ in hardware keyboard.
+telepresence communicating.
+A term associated with video teleconferencing. The goal of telepresence
+is to make it feel like people in different offices are actually sitting in the same office and
+Temporal Key Integrity Protocol (TKIP) dynamic, 128-­ bit per-­ packet security key.
+Wireless security standard that generates a
+terabits per second (Tbps) per second.
+A throughput unit of measure representing one trillion bits
+terabyte (TB) One trillion bytes of data.
+teraflop per second.
+The measure of speed for video cards, in trillions of floating point operations
+28 Glossary
+third- party cookie A text file downloaded from a website that tracks the user ’ s identity
+across websites. Commonly used by digital advertisers to customize ads based on observed
+user preferences.
+third- party website A website that offers software downloads but that is not owned by
+the original developer of the software. The software on third- party websites might or might
+not be exactly like the original and could contain unwanted add- ons.
+Thunderbolt external storage, and other devices.
+A high- speed digital computer interface developed by Apple for video,
+toner printers as opposed to ink.
+A black, carbon substance mixed with polyester resins and iron oxide, used by laser
+touchpad A pointing device commonly built into laptop computers that allows you to use
+your finger to move the cursor on the screen and click, as you would do with a mouse.
+touchscreen A type of display unit that uses capacitive or resistive touch as an input mech-
+anism without requiring separate input methods.
+trackball An exposed ball that functions much like an inverted mouse.
+Transmission Control Protocol/Internet Protocol (TCP/IP) suite A set of computer-
+to- computer communication protocols that encompasses media access, packet transport,
+session communications, file transfer, email, and terminal emulation. TCP/IP is supported by
+a very large number of hardware and software vendors and is available on many different
+computers from PCs to mainframes.
+Trojan horse something malicious.
+A rogue application that appears to do something useful but also does
+U
+unauthorized information alteration improperly modifies data without permission.
+A threat to data integrity; it ’ s when someone
+Unicode and several character sets.
+A superset of ASCII that supports 136,755 characters across 139 language scripts
+uniform resource locator (URL) something like www.google.com .
+The address of a website typed into a web browser,
+uninterruptible power supply (UPS) A UPS is designed to protect everything that ’ s
+plugged into it from power surges, power sags, and even power outages. The device contains
+one or more batteries and fuses. Energy is stored in the batteries, and if the power fails, the
+batteries can power the computer for a period of time so that the administrator can safely
+power it down.
+Glossary 29
+Universal Serial Bus (USB) connecting external peripherals to a PC.
+A high-­ speed, hot-­ pluggable serial interface used for
+unshielded twisted pair (UTP) wire and a flexible outer coating.
+Networking cable that has four twisted pairs of copper
+USB lock Physical security device that blocks access to USB ports on a computer.
+user account unique username and password.
+The security mechanism that allows people to log into a computer with a
+utility software Programs that provide useful features to supplement your operating
+system, such as antimalware protection, diagnostic and maintenance, or file compression.
+V
+variable In programming, a data identifier for a value that can change.
+vector dynamically sized.
+In programming, a container that can store data of multiple types and that can be
+video card projectors.
+An adapter or component that provides the GPU, its memory, and an interface
+to connect to an output device, usually a video display unit, which includes monitors and
+video doorbell usual doorbell-­ ringing duties.
+A device at a door that has a security camera attached to it as well as the
+Video Graphics Array (VGA) video connector in the computer industry.
+An analog video connector that was the first standardized
+virtual machine (VM) A virtualized version of a computer.
+virtual private network (VPN) A secured, encrypted connection between two specific
+computers that occurs through a public network such as the Internet. It works by creating a
+virtual, private tunnel by encapsulating the traveling data into secure packets.
+virtual reality (VR) The computer-­ generated simulation of three-­ dimensional images that
+can be interacted with by a user. Requires a VR headset to function.
+virus the file runs.
+Malware that attaches itself to an executable file and modifies what happens when
+Voice over Internet Protocol (VoIP) ferencing to be transmitted over network cables.
+Technology that allows audio calls or video telecon-
+volatile memory volatile memory.
+Memory that loses its content if power is lost. RAM is a great example of
+30 Glossary
+VR headset a user to experience virtual reality.
+Specialized hardware device that includes a display and speakers, which allows
+vulnerability (1) A flaw in the programming of an application that creates the potential for
+misuse; (2) a tool or technique that allows an attacker to exploit that vulnerability.
+W
+weak passwords A password that is easy for someone to guess.
+wearable device tionality to a user.
+Watches, headsets, glasses, and other computer devices that provide func-
+web camera A video-­ only camera that connects to a computer so that the video it captures
+can be sent across the Internet in real time or recorded by software.
+web server Server that specializes in hosting and delivering Internet pages to web clients.
+wide area network (WAN) boundaries.
+Network that crosses local, regional, and/or international
+Wi-­ Fi Protected Access (WPA) An enhancement of 802.11 encryption that secures Wi-­ Fi
+communications. The most current and secure standard is WPA3.
+Wi-­ Fi Protected Access 2 (WPA2) able for 802.11 networks.
+An updated, strong wireless encryption method avail-
+Wi-­ Fi Protected Access 3 (WPA3) method available for 802.11 networks.
+The most updated, strongest wireless encryption
+Windows Operating system family developed by Microsoft.
+Windows Recovery Environment (WinRE) Troubleshooting utility that comes with Win-
+dows Vista and newer, which allows a user to boot to the Windows installation USB flash
+drive and repair a corrupted Windows installation.
+Windows Registry settings.
+Database in the Windows operating system that contains all system
+Windows Update operating system.
+A Windows utility that provides for automatic updates of the Windows
+Wired Equivalency Protocol (WEP) An old security protocol for 802.11 (wireless) net-
+works that attempts to establish the same security as would be present in a wired network. It
+has security flaws and is easily compromised.
+wireless access point A network connectivity device that allows other devices to connect
+to a network without physical network cables.
+Glossary 31
+wireless local area network (WLAN) A network using the 802.11 standard, or Wi-­ Fi.
+wireless personal area network (WPAN) Another name for Bluetooth networks.
+wiretapping in on communications.
+An attack method where the attacker intercepts a signal over a wire to listen
+workstation A computer that users use to access resources, most often a client computer
+on a network. Usually a desktop or laptop computer.
+worm Trojan horse or a virus.
+A self-­ transporting malware application that carries an active payload, such as a
