@@ -1,3 +1,6 @@
+discord.py
 yt-dlp
 PyNaCl
-discord.py
+ffmpeg-python
+aiohttp
+python-dotenv
