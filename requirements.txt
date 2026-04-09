@@ -4,3 +4,4 @@ PyNaCl
 ffmpeg-python
 aiohttp
 python-dotenv
+requests
