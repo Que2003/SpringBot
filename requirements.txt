@@ -1,4 +1,8 @@
 discord.py
-python-dotenv
-requests
+aiohttp
+PyNaCl
+davey
 yt-dlp
+requests
+sympy
+python-dotenv
