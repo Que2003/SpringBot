@@ -1,5 +1,4 @@
-{
-  "chapter1": {import os
+import os
 import logging
 import asyncio
 import discord
