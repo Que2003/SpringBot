@@ -1,0 +1,45 @@
+import json
+from pathlib import Path
+import discord
+from discord.ext import commands
+
+class Study(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        path = Path("data/study_notes.json")
+        self.notes = json.loads(path.read_text()) if path.exists() else {}
+
+    @commands.command(name="chapters")
+    async def chapters(self, ctx):
+        lines = [f"{key.replace('chapter', 'Chapter ')}: {value['title']}" for key, value in self.notes.items()]
+        await ctx.send("\\n".join(lines[:25]) if lines else "No study chapters loaded.")
+
+    @commands.command(name="chapter")
+    async def chapter(self, ctx, number: int):
+        key = f"chapter{number}"
+        if key not in self.notes:
+            await ctx.send("Chapter not found.")
+            return
+        note = self.notes[key]
+        embed = discord.Embed(title=f"Chapter {number}: {note['title']}", description=note['summary'][:4000])
+        await ctx.send(embed=embed)
+
+    @commands.command(name="studysearch")
+    async def studysearch(self, ctx, *, term: str):
+        term_lower = term.lower()
+        matches = []
+        for key, note in self.notes.items():
+            hay = f"{note['title']} {note['summary']}".lower()
+            if term_lower in hay:
+                matches.append((key, note))
+        if not matches:
+            await ctx.send("No matching study notes found.")
+            return
+        lines = []
+        for key, note in matches[:8]:
+            chapter_num = key.replace("chapter", "")
+            lines.append(f"Chapter {chapter_num} - {note['title']}: {note['summary'][:180]}...")
+        await ctx.send("\\n\\n".join(lines))
+
+async def setup(bot):
+    await bot.add_cog(Study(bot))
