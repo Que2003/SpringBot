@@ -1,0 +1,94 @@
+{
+  "chapter1": {
+    "title": "Motherboards, processors, and memory",
+    "summary": "Know ATX, microATX, and ITX form factors; motherboard parts like expansion slots, RAM slots, CPU sockets, BIOS/UEFI, and CMOS battery; connector types such as PCIe, SATA, eSATA, and M.2; CPU architecture differences; BIOS/UEFI responsibilities; RAM compatibility; and cooling methods like heatsinks, fans, thermal paste, and liquid cooling."
+  },
+  "chapter2": {
+    "title": "Expansion cards, storage devices, and power supplies",
+    "summary": "Know video, sound, network, and capture cards; HDD basics, SSD advantages, NVMe/SATA/PCIe/SAS, M.2 and mSATA; optical storage differences; flash media; RAID 0, RAID 1, RAID 5, RAID 6, and RAID 10; hot-swappable storage; power supply connectors, wattage, voltage, efficiency, modular and redundant power supplies; and storage and power installation basics."
+  },
+  "chapter3": {
+    "title": "Peripherals, cables, and connectors",
+    "summary": "Know IPS, TN, and VA LCDs, OLED and mini-LED; touchscreens, digitizers, and inverters; display attributes like pixel density, refresh rate, resolution, and color gamut; adapters like DVI to HDMI and DVI to VGA; display connectors like VGA, DVI, HDMI, mini HDMI, DisplayPort, and USB-C; storage connectors like SATA and eSATA; and common cable types like USB, Lightning, Thunderbolt, and serial."
+  },
+  "chapter4": {
+    "title": "Laptop and mobile device hardware",
+    "summary": "Know how to install and configure laptop components such as batteries, keyboards, RAM, drives, and wireless cards; privacy and security components like biometrics and NFC; mobile display parts including touchscreen, digitizer, antenna, camera, microphone, and inverter; connection types such as USB, Lightning, serial, NFC, Bluetooth, and hotspot; and accessories like stylus, docking stations, webcams, and speakers."
+  },
+  "chapter5": {
+    "title": "Printers and multifunction devices",
+    "summary": "Know printer technologies such as laser, inkjet, thermal, and impact; printer connections like USB, Ethernet, and wireless; duplex, orientation, tray settings, and print quality; scan-to-email, scan-to-folder, and scan-to-cloud; the laser printing process; major printer parts; maintenance like toner replacement, cleaning, and calibration; and why recommended consumables matter."
+  },
+  "chapter6": {
+    "title": "Networking fundamentals",
+    "summary": "Know LAN, WAN, PAN, MAN, SAN, and WLAN; NICs and MAC addresses; cable types like coax, UTP, STP, and fiber; patch versus crossover cables; T568A and T568B; plenum cable; network connectors like RJ45, BNC, ST, SC, and LC; modems and ONTs; hubs, switches, access points, patch panels, routers, firewalls, and PoE."
+  },
+  "chapter7": {
+    "title": "Introduction to TCP/IP",
+    "summary": "Know IPv4 addressing, subnet masks, gateways, DHCP and APIPA; public versus private IP ranges; TCP versus UDP; common ports like 20/21, 22, 23, 25, 53, 67/68, 80, 110, 143, 389, 443, 445, and 3389; NAT; IPv6 addressing, shorthand, unicast, anycast, multicast, loopback, global unicast, link-local, and multicast ranges; and VLAN versus VPN."
+  },
+  "chapter8": {
+    "title": "Network services",
+    "summary": "Know server roles such as DNS, DHCP, file, print, mail, log, web, AAA, database, and NTP; DNS record types A, AAAA, CNAME, MX, and TXT; DKIM, SPF, and DMARC; DHCP scopes, exclusions, and reservations; spam gateways, UTM, load balancers, proxy servers; and examples of legacy, embedded, and IoT systems."
+  },
+  "chapter9": {
+    "title": "Wireless and SOHO networking",
+    "summary": "Know 802.11 standards from a, b, g, n, ac, ax, and be; 2.4, 5, and 6 GHz; channels 1, 6, and 11; Bluetooth; RFID versus NFC; broadband types like DSL, cable, fiber, satellite, cellular, and WISP; 4G and 5G basics; client IP configuration; APIPA; and wireless security protocols WPA, WPA2, and WPA3."
+  },
+  "chapter10": {
+    "title": "Mobile connectivity and application support",
+    "summary": "Know 3G, 4G, and 5G basics; hotspots; enabling and disabling wireless connections; SIM and eSIM; Bluetooth pairing; GPS versus cellular location; MDM and MAM; email protocols and secure ports; corporate devices versus BYOD; common email providers; and synchronization of contacts, calendars, email, and cloud data."
+  },
+  "chapter11": {
+    "title": "Virtualization and cloud computing",
+    "summary": "Know why virtual machines are used; VM security, storage, and network needs; VDI; hypervisors type 1 and type 2; containers; public, private, hybrid, and community clouds; IaaS, PaaS, and SaaS; shared versus dedicated resources; metered use, ingress and egress; elasticity, availability, file sync, and multi-tenancy."
+  },
+  "chapter12": {
+    "title": "Core hardware and network troubleshooting",
+    "summary": "Know POST basics, CMOS battery issues, shutdowns, reboots, overheating, power supply symptoms, strange noises, black screen causes, sluggish performance, application crashes, drive and RAID failures, SMART, wireless NIC checks, network tools like crimpers, testers, toner probes, loopback plugs, network taps, and commands like ipconfig, ping, tracert, netstat, net, and nslookup."
+  },
+  "chapter13": {
+    "title": "Mobile device, display, and printer troubleshooting",
+    "summary": "Know display input issues, image issues, projector overheating, mobile power and heat issues, touchscreen and stylus problems, physical damage, malware, printer IP addressing, print garbage causes, stepper motor issues, paper jams and misfeeds, print quality problems, and how to restart the print spooler."
+  },
+  "chapter14": {
+    "title": "Operating system basics",
+    "summary": "Know 32-bit versus 64-bit RAM limitations, operating system lifecycle stages, OS types such as server, workstation, mobile, and cloud-based, Windows editions and their differences, application requirements, cloud application basics, and Windows file management and file locations."
+  },
+  "chapter15": {
+    "title": "Windows configuration",
+    "summary": "Know file systems like NTFS, FAT32, exFAT, ReFS, and Linux file systems; partitioning styles GPT and MBR; Windows settings and control panel tools; major administrative tools; and disk management concepts such as initializing, mounting, extending, shrinking, and using storage spaces."
+  },
+  "chapter16": {
+    "title": "Windows administration",
+    "summary": "Know Windows installation options, clean installs versus upgrades, command-line tools such as cd, dir, ipconfig, ping, netstat, nslookup, tracert, chkdsk, diskpart, robocopy, hostname, net user, gpupdate, gpresult, and sfc; Windows networking models like workgroups, domains, and Entra ID; and how to access network and printer shares."
+  },
+  "chapter17": {
+    "title": "Working with macOS and Linux",
+    "summary": "Know how applications are installed and removed in macOS, backup and maintenance best practices, key macOS tools such as Mission Control, Keychain, Spotlight, Finder, Disk Utility, FileVault, and Terminal; Linux command basics; common Linux configuration files like /etc/passwd, /etc/shadow, /etc/hosts, and /etc/fstab; and Linux boot components like EFI, GRUB, kernel, and systemd."
+  },
+  "chapter18": {
+    "title": "Security concepts",
+    "summary": "Know physical security controls such as badge readers, cameras, alarms, locks, fences, guards, bollards, key fobs, smart cards, and biometrics; logical security methods such as ACLs, least privilege, and MFA; malware types and mitigation; user education; password security; data destruction methods; social engineering attacks; and network threats like DoS, DDoS, spoofing, on-path attacks, brute force, SQL injection, XSS, and BEC."
+  },
+  "chapter19": {
+    "title": "Securing operating systems",
+    "summary": "Know Windows security concepts such as default accounts, NTFS and share permissions, authentication, drive encryption, wireless security protocols WEP, WPA, WPA2, and WPA3, antenna placement and radio power, SOHO security practices like disabling unneeded protocols and MAC filtering, and mobile device security features like screen locks, remote wipe, full encryption, authentication apps, firewalls, and mobile policies."
+  },
+  "chapter20": {
+    "title": "Troubleshooting operating systems and security",
+    "summary": "Know common operating system problem symptoms and solutions, the five critical systems of CPU, RAM, network, disk, and graphics, common security issues affecting operating systems, malware removal steps and tools, mobile OS and application issues, and mobile device security symptoms, risks, and mitigation."
+  },
+  "chapter21": {
+    "title": "Scripting, remote access, and artificial intelligence",
+    "summary": "Know the difference between programming and scripting, scripting logic and loops, common script file extensions such as .bat, .ps1, .vbs, .sh, .js, and .py, uses for scripts like automation and backups, remote access technologies like RDP, VNC, SSH, RMM, and SPICE, and AI concepts such as training, neural networks, LLMs, NLP, bias, hallucinations, policy, and plagiarism."
+  },
+  "chapter22": {
+    "title": "Safety and environmental concerns",
+    "summary": "Know dangerous computer components like power supplies and monitors, safety documentation such as MSDS, proper tool use, ESD prevention methods, safe disposal of computer parts and batteries, license types, handling prohibited content and preserving evidence, sensitive information categories such as PII, PCI DSS, GDPR, and PHI, and business agreements like NDA, MNDA, and AUP."
+  },
+  "chapter23": {
+    "title": "Documentation and professionalism",
+    "summary": "Know the elements of a ticketing system, common network and incident documentation, acceptable use policies, password policies, change management documentation, disaster prevention and recovery, backup methods such as full, incremental, and differential, and proper communication and professionalism with customers."
+  }
+}
