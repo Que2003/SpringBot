@@ -61,3 +61,15 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+cogs/basic.py
+cogs/fun.py
+cogs/utility.py
+cogs/moderation.py
+cogs/education.py
+cogs/empathy.py
+cogs/writing.py
+cogs/information.py
+cogs/news.py
+cogs/music.py
+cogs/study.py
+data/study_notes.json
