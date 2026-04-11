@@ -12,22 +12,19 @@ class Chat(commands.Cog):
         self.state_file = "chat_settings.json"
         self.state = self.load_state()
 
-        self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
-        self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini").strip()
+        self.openrouter_api_key = (os.getenv("OPENROUTER_API_KEY") or "").strip()
+        self.openrouter_model = (os.getenv("OPENROUTER_MODEL") or "openrouter/free").strip()
 
         self.system_instructions = (
             "You are SpringBot, a highly intelligent Discord assistant. "
-            "Be warm, emotionally supportive, conversational, and insightful. "
-            "Speak like a best friend when the user is casual, like a professor when they want learning, "
+            "Be warm, conversational, supportive, and insightful. "
+            "Talk like a best friend when the user is casual, like a professor when they want to learn, "
             "and like a calm supportive coach when they are stressed. "
-            "Be helpful, direct, and easy to understand. "
-            "You can explain things simply or deeply depending on the user's tone. "
-            "Do not be robotic. "
-            "Do not claim to be a licensed therapist, doctor, lawyer, or other professional. "
+            "Be natural, not robotic. "
+            "Do not claim to be a licensed therapist, doctor, or lawyer. "
             "You may be emotionally supportive, but if a user seems in crisis or at risk of self-harm, "
-            "encourage them to contact emergency services or a crisis line immediately. "
-            "Keep replies natural and useful. "
-            "Remember recent conversation context when available."
+            "urge them to contact emergency services or a crisis line right away. "
+            "Keep replies clear, helpful, and human."
         )
 
     def load_state(self):
@@ -92,52 +89,40 @@ class Chat(commands.Cog):
             text = text.replace(f"<@!{self.bot.user.id}>", "")
         return text.strip()
 
-    def extract_response_text(self, data):
-        if isinstance(data.get("output_text"), str) and data["output_text"].strip():
-            return data["output_text"].strip()
+    def trim_memory(self, history, max_items=12):
+        return history[-max_items:]
 
-        output = data.get("output", [])
-        for item in output:
-            if item.get("type") == "message":
-                content = item.get("content", [])
-                for part in content:
-                    if part.get("type") == "output_text":
-                        text = part.get("text", "").strip()
-                        if text:
-                            return text
+    async def query_openrouter(self, user_text, memory_key):
+        if not self.openrouter_api_key:
+            raise RuntimeError("Missing OPENROUTER_API_KEY in Railway variables.")
 
-        return "I’m here, but I couldn’t generate a proper reply."
+        memory = self.state.get("memory", {})
+        history = memory.get(memory_key, [])
 
-    async def query_openai(self, user_text, memory_key, safety_identifier):
-        if not self.openai_api_key:
-            raise RuntimeError("Missing OPENAI_API_KEY in Railway variables.")
-
-        previous_response_id = self.state.get("memory", {}).get(memory_key)
+        messages = [{"role": "system", "content": self.system_instructions}]
+        messages.extend(history)
+        messages.append({"role": "user", "content": user_text})
 
         payload = {
-            "model": self.openai_model,
-            "instructions": self.system_instructions,
-            "input": user_text,
+            "model": self.openrouter_model,
+            "messages": messages,
             "temperature": 0.8,
-            "max_output_tokens": 350,
-            "store": True,
-            "safety_identifier": str(safety_identifier),
+            "max_tokens": 350
         }
-
-        if previous_response_id:
-            payload["previous_response_id"] = previous_response_id
 
         body = json.dumps(payload).encode("utf-8")
         headers = {
-            "Authorization": f"Bearer {self.openai_api_key}",
+            "Authorization": f"Bearer {self.openrouter_api_key}",
             "Content-Type": "application/json",
+            "HTTP-Referer": "https://springbot.local",
+            "X-Title": "SpringBot"
         }
 
         request = urllib.request.Request(
-            "https://api.openai.com/v1/responses",
+            "https://openrouter.ai/api/v1/chat/completions",
             data=body,
             headers=headers,
-            method="POST",
+            method="POST"
         )
 
         def run_request():
@@ -152,18 +137,27 @@ class Chat(commands.Cog):
                 details = e.read().decode("utf-8")
             except Exception:
                 details = str(e)
-            raise RuntimeError(f"OpenAI HTTP {e.code}: {details}")
+            raise RuntimeError(f"OpenRouter HTTP {e.code}: {details}")
         except urllib.error.URLError as e:
-            raise RuntimeError(f"OpenAI connection error: {e.reason}")
+            raise RuntimeError(f"OpenRouter connection error: {e.reason}")
         except Exception as e:
-            raise RuntimeError(f"OpenAI request failed: {e}")
+            raise RuntimeError(f"OpenRouter request failed: {e}")
 
-        response_id = data.get("id")
-        if response_id:
-            self.state["memory"][memory_key] = response_id
-            self.save_state()
+        choices = data.get("choices", [])
+        if not choices:
+            raise RuntimeError("No response choices returned.")
 
-        return self.extract_response_text(data)
+        reply = choices[0].get("message", {}).get("content", "").strip()
+        if not reply:
+            raise RuntimeError("OpenRouter returned an empty reply.")
+
+        history.append({"role": "user", "content": user_text})
+        history.append({"role": "assistant", "content": reply})
+        memory[memory_key] = self.trim_memory(history)
+        self.state["memory"] = memory
+        self.save_state()
+
+        return reply
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -178,11 +172,7 @@ class Chat(commands.Cog):
 
         try:
             async with message.channel.typing():
-                reply = await self.query_openai(
-                    user_text=user_text,
-                    memory_key=memory_key,
-                    safety_identifier=message.author.id,
-                )
+                reply = await self.query_openrouter(user_text, memory_key)
         except Exception as e:
             await message.channel.send(f"Chat failed: {e}")
             return
@@ -197,10 +187,7 @@ class Chat(commands.Cog):
     async def setchat(self, ctx):
         self.state["chat_channel_id"] = ctx.channel.id
         self.save_state()
-        await ctx.send(
-            f"This channel is now the AI chat channel.\n"
-            f"Channel ID: **{ctx.channel.id}**"
-        )
+        await ctx.send(f"This channel is now the AI chat channel.\nChannel ID: **{ctx.channel.id}**")
 
     @commands.command(help="Turn no-command AI chat on or off in the saved chat channel.")
     @commands.has_permissions(manage_guild=True)
@@ -219,14 +206,13 @@ class Chat(commands.Cog):
     async def chatstatus(self, ctx):
         channel_id = self.state.get("chat_channel_id", 0)
         autochat = self.state.get("autochat", False)
-        model = self.openai_model
-        key_present = bool(self.openai_api_key)
+        key_present = bool(self.openrouter_api_key)
 
         await ctx.send(
             f"Chat channel ID: **{channel_id}**\n"
             f"Auto chat: **{autochat}**\n"
-            f"OpenAI key present: **{key_present}**\n"
-            f"Model: **{model}**\n"
+            f"OpenRouter key present: **{key_present}**\n"
+            f"Model: **{self.openrouter_model}**\n"
             "The bot will also reply when mentioned."
         )
 
