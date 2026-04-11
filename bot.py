@@ -13,7 +13,6 @@ if not TOKEN:
     raise RuntimeError("Missing DISCORD_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
-log = logging.getLogger("springbot")
 
 intents = discord.Intents.default()
 intents.message_content = True
