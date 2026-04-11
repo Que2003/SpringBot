@@ -5,8 +5,36 @@ import asyncio
 from pathlib import Path
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, voice_recv
 import edge_tts
+
+
+class PacketLoggerSink(voice_recv.AudioSink):
+    def __init__(self, parent_cog, guild_id: int):
+        super().__init__()
+        self.parent_cog = parent_cog
+        self.guild_id = guild_id
+
+    def wants_opus(self) -> bool:
+        return False
+
+    def write(self, user, data):
+        if user is None:
+            return
+
+        state = self.parent_cog.listen_state.setdefault(
+            self.guild_id,
+            {
+                "listening": False,
+                "packets": 0,
+                "users": set(),
+                "wave_file": None,
+                "started_by": None,
+            },
+        )
+
+        state["packets"] += 1
+        state["users"].add(str(user))
 
 
 class VoiceChat(commands.Cog):
@@ -15,9 +43,14 @@ class VoiceChat(commands.Cog):
         self.temp_dir = Path("tts_audio")
         self.temp_dir.mkdir(exist_ok=True)
 
+        self.record_dir = Path("vc_recordings")
+        self.record_dir.mkdir(exist_ok=True)
+
         self.voice_name = os.getenv("TTS_VOICE", "en-US-GuyNeural")
         self.rate = os.getenv("TTS_RATE", "+0%")
         self.ffmpeg_path = shutil.which("ffmpeg") or os.getenv("FFMPEG_PATH") or "ffmpeg"
+
+        self.listen_state = {}
 
     async def ensure_voice(self, ctx):
         if not ctx.author.voice or not ctx.author.voice.channel:
@@ -28,7 +61,7 @@ class VoiceChat(commands.Cog):
 
         if voice_client is None:
             try:
-                return await ctx.author.voice.channel.connect()
+                return await ctx.author.voice.channel.connect(cls=voice_recv.VoiceRecvClient)
             except Exception as e:
                 await ctx.send(f"Could not join voice channel: {e}")
                 return None
@@ -60,17 +93,30 @@ class VoiceChat(commands.Cog):
         except Exception:
             pass
 
-    @commands.command(help="Join your voice channel for talking.")
+    def build_recording_path(self, guild_id: int):
+        return self.record_dir / f"{guild_id}_{uuid.uuid4().hex}.wav"
+
+    @commands.command(help="Join your voice channel using the voice receive client.")
     async def joinvc(self, ctx):
         voice_client = await self.ensure_voice(ctx)
         if voice_client:
             await ctx.send(f"Joined **{voice_client.channel.name}**")
 
-    @commands.command(help="Leave the voice channel.")
+    @commands.command(help="Leave the voice channel and stop listening.")
     async def leavevc(self, ctx):
+        guild_id = ctx.guild.id
+
         if ctx.voice_client is None:
             await ctx.send("I am not in a voice channel.")
             return
+
+        try:
+            if hasattr(ctx.voice_client, "is_listening") and ctx.voice_client.is_listening():
+                ctx.voice_client.stop_listening()
+        except Exception:
+            pass
+
+        self.listen_state.pop(guild_id, None)
 
         await ctx.voice_client.disconnect()
         await ctx.send("Left the voice channel.")
@@ -115,24 +161,109 @@ class VoiceChat(commands.Cog):
         voice_client.play(source, after=after_playing)
         await ctx.send(f"Speaking in **{voice_client.channel.name}**")
 
-    @commands.command(help="Show current VC talk settings.")
-    async def vcstatus(self, ctx):
-        ffmpeg_ok = bool(shutil.which("ffmpeg") or os.path.exists(self.ffmpeg_path))
+    @commands.command(help="Start listening in VC and save audio to a WAV file.")
+    async def startlisten(self, ctx):
+        voice_client = await self.ensure_voice(ctx)
+        if voice_client is None:
+            return
+
+        guild_id = ctx.guild.id
+
+        if not isinstance(voice_client, voice_recv.VoiceRecvClient):
+            await ctx.send("Voice receive is not active on this connection.")
+            return
+
+        if voice_client.is_listening():
+            await ctx.send("I am already listening.")
+            return
+
+        recording_path = self.build_recording_path(guild_id)
+
+        packet_sink = PacketLoggerSink(self, guild_id)
+        wave_sink = voice_recv.WaveSink(str(recording_path))
+        packet_sink.child = wave_sink
+
+        self.listen_state[guild_id] = {
+            "listening": True,
+            "packets": 0,
+            "users": set(),
+            "wave_file": str(recording_path),
+            "started_by": str(ctx.author),
+        }
+
+        def after_listen(error):
+            if error:
+                print(f"Voice receive error: {error}")
+
+        voice_client.listen(packet_sink, after=after_listen)
+
         await ctx.send(
-            f"TTS voice: **{self.voice_name}**\n"
-            f"TTS rate: **{self.rate}**\n"
-            f"FFmpeg detected: **{ffmpeg_ok}**\n"
-            f"FFmpeg path: **{self.ffmpeg_path}**"
+            f"Started listening in **{voice_client.channel.name}**.\n"
+            f"Recording file: **{recording_path.name}**"
         )
 
-    @commands.command(help="Show VC talking commands.")
+    @commands.command(help="Stop listening in VC.")
+    async def stoplisten(self, ctx):
+        guild_id = ctx.guild.id
+        voice_client = ctx.voice_client
+
+        if voice_client is None:
+            await ctx.send("I am not in a voice channel.")
+            return
+
+        if not hasattr(voice_client, "is_listening") or not voice_client.is_listening():
+            await ctx.send("I am not currently listening.")
+            return
+
+        voice_client.stop_listening()
+
+        if guild_id in self.listen_state:
+            self.listen_state[guild_id]["listening"] = False
+
+        await ctx.send("Stopped listening.")
+
+    @commands.command(help="Show VC listening status.")
+    async def vcstatus(self, ctx):
+        guild_id = ctx.guild.id
+        state = self.listen_state.get(
+            guild_id,
+            {
+                "listening": False,
+                "packets": 0,
+                "users": set(),
+                "wave_file": None,
+                "started_by": None,
+            },
+        )
+
+        voice_client = ctx.voice_client
+        receive_capable = isinstance(voice_client, voice_recv.VoiceRecvClient)
+
+        users = list(state.get("users", set()))
+        if users:
+            users_text = ", ".join(users[:5])
+        else:
+            users_text = "No users detected yet."
+
+        await ctx.send(
+            f"Receive-capable VC client: **{receive_capable}**\n"
+            f"Listening: **{state.get('listening', False)}**\n"
+            f"Packets received: **{state.get('packets', 0)}**\n"
+            f"Detected speakers: **{users_text}**\n"
+            f"Recording file: **{state.get('wave_file')}**\n"
+            f"TTS voice: **{self.voice_name}**"
+        )
+
+    @commands.command(help="Show voice chat commands.")
     async def vchelp(self, ctx):
         await ctx.send(
             "**VC Commands**\n"
             "!joinvc - join your voice channel\n"
             "!leavevc - leave the voice channel\n"
-            "!sayvc <message> - speak in voice chat\n"
-            "!vcstatus - show TTS/FFmpeg status\n"
+            "!sayvc <message> - speak in VC\n"
+            "!startlisten - start listening and recording VC audio\n"
+            "!stoplisten - stop listening\n"
+            "!vcstatus - show voice status\n"
             "!vchelp - show this list"
         )
 
