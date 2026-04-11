@@ -34,19 +34,13 @@ EXTENSIONS = [
     "cogs.security",
     "cogs.history",
     "cogs.music",
+    "cogs.math",
 ]
 
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("SpringBot is online.")
-    print("Registered commands:")
-    for command in sorted(bot.commands, key=lambda c: c.name):
-        print(f"- {command.name}")
-
-@bot.event
-async def on_command(ctx):
-    print(f"Command used: {ctx.command} by {ctx.author}")
 
 @bot.event
 async def on_command_error(ctx, error):
