@@ -71,9 +71,7 @@ class SpringBot(commands.Bot):
 
     async def setup_hook(self) -> None:
         ensure_data_files()
-        for ext in EXTENSIONS:
-            await self.load_extension(ext)
-            log.info("Loaded extension: %s", ext)
+        
 
     async def on_ready(self) -> None:
         await self.change_presence(activity=discord.Game(name=STATUS_TEXT))
