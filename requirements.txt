@@ -1,10 +1,2 @@
-bot.py
-requirements.txt
-    __init__.py
-    basic.py
-    fun.py
-    utility.py
-    moderation.py
-    education.py
-    empathy.py
-    writing.py
+discord.py
+python-dotenv
