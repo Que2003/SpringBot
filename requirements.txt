@@ -1,6 +1,5 @@
 bot.py
 requirements.txt
-cogs/
     __init__.py
     basic.py
     fun.py
