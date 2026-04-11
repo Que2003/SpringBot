@@ -9,6 +9,9 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = "!"
 
+if not TOKEN:
+    raise RuntimeError("Missing DISCORD_TOKEN")
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
