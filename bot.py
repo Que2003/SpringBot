@@ -40,10 +40,18 @@ EXTENSIONS = [
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("SpringBot is online.")
+    print("Registered commands:")
+    for command in sorted(bot.commands, key=lambda c: c.name):
+        print(f"- {command.name}")
+
+@bot.event
+async def on_command(ctx):
+    print(f"Command used: {ctx.command} by {ctx.author}")
 
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
+        await ctx.send("That command does not exist.")
         return
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("You are missing part of that command.")
@@ -59,6 +67,7 @@ async def on_command_error(ctx, error):
         return
 
     await ctx.send(f"Command error: {error}")
+    print(f"Command error: {error}")
 
 async def load_extensions():
     for ext in EXTENSIONS:
