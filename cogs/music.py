@@ -1,3 +1,4 @@
+import os
 import asyncio
 from collections import defaultdict, deque
 
@@ -11,19 +12,44 @@ class Music(commands.Cog):
         self.bot = bot
         self.queues = defaultdict(deque)
         self.now_playing = {}
+        self.loop_mode = defaultdict(bool)
+
+        self.cookies_file = os.getenv("YTDLP_COOKIES_FILE", "cookies.txt")
 
         self.ytdl_options = {
             "format": "bestaudio/best",
             "noplaylist": True,
             "quiet": True,
-            "default_search": "ytsearch",
+            "default_search": "auto",
             "extract_flat": False,
+            "source_address": "0.0.0.0",
         }
+
+        if os.path.exists(self.cookies_file):
+            self.ytdl_options["cookiefile"] = self.cookies_file
 
         self.ffmpeg_options = {
             "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
             "options": "-vn",
         }
+
+    def is_direct_link(self, query: str) -> bool:
+        query = query.lower().strip()
+        return query.startswith("http://") or query.startswith("https://")
+
+    def looks_like_youtube(self, query: str) -> bool:
+        q = query.lower()
+        return (
+            "youtube.com" in q
+            or "youtu.be" in q
+            or "music.youtube.com" in q
+        )
+
+    def preferred_search_query(self, query: str) -> str:
+        if self.is_direct_link(query):
+            return query
+
+        return f"scsearch1:{query}"
 
     async def ensure_voice(self, ctx):
         if not ctx.author.voice or not ctx.author.voice.channel:
@@ -58,10 +84,14 @@ class Music(commands.Cog):
         return await loop.run_in_executor(None, run)
 
     async def build_source(self, query):
-        data = await self.extract_info(query)
+        search_target = self.preferred_search_query(query)
+        data = await self.extract_info(search_target)
 
         if "entries" in data:
-            data = data["entries"][0]
+            entries = data.get("entries") or []
+            if not entries:
+                raise RuntimeError("No results found.")
+            data = entries[0]
 
         if not data:
             raise RuntimeError("No results found.")
@@ -69,6 +99,7 @@ class Music(commands.Cog):
         title = data.get("title", "Unknown Title")
         webpage_url = data.get("webpage_url") or query
         stream_url = data.get("url")
+        extractor = data.get("extractor_key") or data.get("extractor") or "Unknown"
 
         if not stream_url:
             raise RuntimeError("Could not get an audio stream.")
@@ -79,6 +110,8 @@ class Music(commands.Cog):
             "title": title,
             "url": webpage_url,
             "source": source,
+            "extractor": extractor,
+            "original_query": query,
         }
 
     async def play_next(self, guild_id):
@@ -89,6 +122,33 @@ class Music(commands.Cog):
         voice_client = guild.voice_client
         if voice_client is None:
             return
+
+        current_song = self.now_playing.get(guild_id)
+        if self.loop_mode[guild_id] and current_song is not None:
+            try:
+                looped_song = await self.build_source(current_song["original_query"])
+                looped_song["requester"] = current_song.get("requester")
+                looped_song["text_channel"] = current_song["text_channel"]
+                self.now_playing[guild_id] = looped_song
+
+                def after_playing(error):
+                    if error:
+                        print(f"Music playback error: {error}")
+
+                    future = asyncio.run_coroutine_threadsafe(
+                        self.play_next(guild_id),
+                        self.bot.loop
+                    )
+                    try:
+                        future.result()
+                    except Exception as e:
+                        print(f"Queue advance error: {e}")
+
+                voice_client.play(looped_song["source"], after=after_playing)
+                await looped_song["text_channel"].send(f"Looping: **{looped_song['title']}**")
+                return
+            except Exception as e:
+                await current_song["text_channel"].send(f"Loop failed: {e}")
 
         if not self.queues[guild_id]:
             self.now_playing[guild_id] = None
@@ -101,16 +161,22 @@ class Music(commands.Cog):
             if error:
                 print(f"Music playback error: {error}")
 
-            fut = asyncio.run_coroutine_threadsafe(self.play_next(guild_id), self.bot.loop)
+            future = asyncio.run_coroutine_threadsafe(
+                self.play_next(guild_id),
+                self.bot.loop
+            )
             try:
-                fut.result()
+                future.result()
             except Exception as e:
                 print(f"Queue advance error: {e}")
 
         voice_client.play(next_song["source"], after=after_playing)
 
         channel = next_song["text_channel"]
-        await channel.send(f"Now playing: **{next_song['title']}**")
+        await channel.send(
+            f"Now playing: **{next_song['title']}**\n"
+            f"Source: **{next_song['extractor']}**"
+        )
 
     @commands.command(help="Joins your current voice channel.")
     async def join(self, ctx):
@@ -127,11 +193,12 @@ class Music(commands.Cog):
         guild_id = ctx.guild.id
         self.queues[guild_id].clear()
         self.now_playing[guild_id] = None
+        self.loop_mode[guild_id] = False
 
         await ctx.voice_client.disconnect()
         await ctx.send("Disconnected and cleared the music queue.")
 
-    @commands.command(help="Plays a song from a YouTube link or search term.")
+    @commands.command(help="Plays a SoundCloud, Bandcamp, Vimeo, Twitch, Dailymotion, Internet Archive, or other supported link. For plain text searches, it tries SoundCloud first.")
     async def play(self, ctx, *, query):
         voice_client = await self.ensure_voice(ctx)
         if voice_client is None:
@@ -142,14 +209,25 @@ class Music(commands.Cog):
             song["requester"] = ctx.author
             song["text_channel"] = ctx.channel
         except Exception as e:
-            await ctx.send(f"Could not load that track: {e}")
+            error_text = str(e)
+
+            if "Sign in to confirm you're not a bot" in error_text:
+                await ctx.send(
+                    "YouTube blocked this request.\n"
+                    "Use a **SoundCloud or Bandcamp link**, or add a valid **cookies.txt** file for YouTube."
+                )
+            else:
+                await ctx.send(f"Could not load that track: {error_text}")
             return
 
         guild_id = ctx.guild.id
 
         if voice_client.is_playing() or voice_client.is_paused():
             self.queues[guild_id].append(song)
-            await ctx.send(f"Queued: **{song['title']}**")
+            await ctx.send(
+                f"Queued: **{song['title']}**\n"
+                f"Source: **{song['extractor']}**"
+            )
             return
 
         self.now_playing[guild_id] = song
@@ -158,14 +236,20 @@ class Music(commands.Cog):
             if error:
                 print(f"Music playback error: {error}")
 
-            fut = asyncio.run_coroutine_threadsafe(self.play_next(guild_id), self.bot.loop)
+            future = asyncio.run_coroutine_threadsafe(
+                self.play_next(guild_id),
+                self.bot.loop
+            )
             try:
-                fut.result()
+                future.result()
             except Exception as e:
                 print(f"Queue advance error: {e}")
 
         voice_client.play(song["source"], after=after_playing)
-        await ctx.send(f"Now playing: **{song['title']}**")
+        await ctx.send(
+            f"Now playing: **{song['title']}**\n"
+            f"Source: **{song['extractor']}**"
+        )
 
     @commands.command(help="Pauses the current track.")
     async def pause(self, ctx):
@@ -192,6 +276,7 @@ class Music(commands.Cog):
         guild_id = ctx.guild.id
         self.queues[guild_id].clear()
         self.now_playing[guild_id] = None
+        self.loop_mode[guild_id] = False
 
         if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
             ctx.voice_client.stop()
@@ -201,6 +286,7 @@ class Music(commands.Cog):
     @commands.command(help="Skips the current track.")
     async def skip(self, ctx):
         if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
+            self.loop_mode[ctx.guild.id] = False
             ctx.voice_client.stop()
             await ctx.send("Skipped the current track.")
         else:
@@ -214,7 +300,10 @@ class Music(commands.Cog):
             await ctx.send("Nothing is playing right now.")
             return
 
-        await ctx.send(f"Now playing: **{song['title']}**")
+        await ctx.send(
+            f"Now playing: **{song['title']}**\n"
+            f"Source: **{song['extractor']}**"
+        )
 
     @commands.command(help="Shows the queued tracks.")
     async def queue(self, ctx):
@@ -226,7 +315,7 @@ class Music(commands.Cog):
 
         lines = []
         for index, song in enumerate(list(guild_queue)[:10], start=1):
-            lines.append(f"{index}. {song['title']}")
+            lines.append(f"{index}. {song['title']} [{song['extractor']}]")
 
         await ctx.send("**Queue:**\n" + "\n".join(lines))
 
@@ -249,12 +338,54 @@ class Music(commands.Cog):
 
         await ctx.send(f"Removed: **{removed['title']}**")
 
+    @commands.command(help="Turns loop mode on or off for the current song.")
+    async def loop(self, ctx):
+        guild_id = ctx.guild.id
+        self.loop_mode[guild_id] = not self.loop_mode[guild_id]
+
+        if self.loop_mode[guild_id]:
+            await ctx.send("Loop mode is now **ON**.")
+        else:
+            await ctx.send("Loop mode is now **OFF**.")
+
+    @commands.command(help="Shuffles the current queue.")
+    async def shuffle(self, ctx):
+        guild_id = ctx.guild.id
+        guild_queue = self.queues.get(guild_id)
+
+        if not guild_queue:
+            await ctx.send("The queue is empty.")
+            return
+
+        import random
+        queue_list = list(guild_queue)
+        random.shuffle(queue_list)
+        self.queues[guild_id] = deque(queue_list)
+
+        await ctx.send("Shuffled the queue.")
+
+    @commands.command(help="Shows supported source suggestions for better playback.")
+    async def sources(self, ctx):
+        await ctx.send(
+            "**Best music sources for this bot**\n"
+            "1. SoundCloud links\n"
+            "2. Bandcamp links\n"
+            "3. Vimeo links\n"
+            "4. Dailymotion links\n"
+            "5. Twitch VOD or clip links\n"
+            "6. Internet Archive links\n\n"
+            "Plain text searches try **SoundCloud first**.\n"
+            "YouTube can still work, but it may get blocked."
+        )
+
     @commands.command(help="Shows all music commands.")
     async def musichelp(self, ctx):
+        cookie_status = "found" if os.path.exists(self.cookies_file) else "missing"
+
         await ctx.send(
             "**Music Commands**\n"
             "!join - Join your voice channel\n"
-            "!play <song name or YouTube link> - Play or queue a song\n"
+            "!play <link or song name> - Play or queue a track\n"
             "!pause - Pause music\n"
             "!resume - Resume music\n"
             "!skip - Skip current song\n"
@@ -262,8 +393,13 @@ class Music(commands.Cog):
             "!queue - Show queued songs\n"
             "!remove <number> - Remove a queued song\n"
             "!nowplaying - Show current song\n"
-            "!leave - Leave voice channel"
+            "!loop - Toggle loop mode\n"
+            "!shuffle - Shuffle the queue\n"
+            "!sources - Show best supported sites\n"
+            "!leave - Leave voice channel\n"
+            f"Cookies file status: **{cookie_status}**"
         )
+
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
