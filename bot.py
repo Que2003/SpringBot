@@ -1,9 +1,3 @@
-EXTENSIONS = [
-    "cogs.basic",
-    "cogs.fun",
-    "cogs.utility",
-"cogs.moderation",
-]
 import os
 import discord
 from discord.ext import commands
@@ -26,6 +20,7 @@ EXTENSIONS = [
     "cogs.basic",
     "cogs.fun",
     "cogs.utility",
+    "cogs.moderation",
 ]
 
 @bot.event
