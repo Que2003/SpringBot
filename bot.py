@@ -24,6 +24,7 @@ EXTENSIONS = [
     "cogs.fun",
     "cogs.utility",
     "cogs.moderation",
+    "cogs.education",
 ]
 
 @bot.event
