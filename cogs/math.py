@@ -1,5 +1,7 @@
 import math
 import re
+import statistics
+from fractions import Fraction
 from discord.ext import commands
 
 
@@ -23,6 +25,9 @@ class Math(commands.Cog):
             "sin": math.sin,
             "cos": math.cos,
             "tan": math.tan,
+            "asin": math.asin,
+            "acos": math.acos,
+            "atan": math.atan,
             "log": math.log,
             "log10": math.log10,
             "factorial": math.factorial,
@@ -31,6 +36,10 @@ class Math(commands.Cog):
         }
 
         return eval(cleaned, allowed, {})
+
+    def parse_number_list(self, text: str):
+        parts = [x.strip() for x in text.split(",")]
+        return [float(x) for x in parts if x]
 
     @commands.command(help="Calculate a math expression. Example: !calc 5*(3+2)^2")
     async def calc(self, ctx, *, expression: str):
@@ -163,6 +172,167 @@ class Math(commands.Cog):
             f"Answer: **x = {x}**"
         )
 
+    @commands.command(help="Solve a quadratic equation ax^2+bx+c=0. Example: !quadratic 1 -3 2")
+    async def quadratic(self, ctx, a: float, b: float, c: float):
+        if a == 0:
+            await ctx.send("For a quadratic, **a** cannot be zero.")
+            return
+
+        discriminant = (b ** 2) - (4 * a * c)
+
+        if discriminant > 0:
+            x1 = (-b + math.sqrt(discriminant)) / (2 * a)
+            x2 = (-b - math.sqrt(discriminant)) / (2 * a)
+            await ctx.send(
+                f"Quadratic: **{a}x² + {b}x + {c} = 0**\n"
+                f"Discriminant: **{discriminant}**\n"
+                f"Two real solutions:\n"
+                f"**x₁ = {x1}**\n"
+                f"**x₂ = {x2}**"
+            )
+        elif discriminant == 0:
+            x = -b / (2 * a)
+            await ctx.send(
+                f"Quadratic: **{a}x² + {b}x + {c} = 0**\n"
+                f"Discriminant: **0**\n"
+                f"One repeated real solution:\n"
+                f"**x = {x}**"
+            )
+        else:
+            real = -b / (2 * a)
+            imag = math.sqrt(-discriminant) / (2 * a)
+            await ctx.send(
+                f"Quadratic: **{a}x² + {b}x + {c} = 0**\n"
+                f"Discriminant: **{discriminant}**\n"
+                f"Two complex solutions:\n"
+                f"**x₁ = {real} + {imag}i**\n"
+                f"**x₂ = {real} - {imag}i**"
+            )
+
+    @commands.command(help="Find slope from two points. Example: !slope 2 3 6 11")
+    async def slope(self, ctx, x1: float, y1: float, x2: float, y2: float):
+        if x2 - x1 == 0:
+            await ctx.send("The slope is undefined because the line is vertical.")
+            return
+
+        m = (y2 - y1) / (x2 - x1)
+        await ctx.send(
+            f"Points: **({x1}, {y1})** and **({x2}, {y2})**\n"
+            f"Slope formula: **(y₂ - y₁) / (x₂ - x₁)**\n"
+            f"Answer: **{m}**"
+        )
+
+    @commands.command(help="Convert point-slope info to slope-intercept form. Example: !slopeintercept 2 3 4")
+    async def slopeintercept(self, ctx, m: float, x: float, y: float):
+        b = y - (m * x)
+        await ctx.send(
+            f"Given slope **m = {m}** and point **({x}, {y})**\n"
+            f"Use **y = mx + b**\n"
+            f"Substitute point values: **{y} = {m}({x}) + b**\n"
+            f"Answer: **y = {m}x + {b}**"
+        )
+
+    @commands.command(help="Find midpoint of two points. Example: !midpoint 2 3 6 11")
+    async def midpoint(self, ctx, x1: float, y1: float, x2: float, y2: float):
+        mx = (x1 + x2) / 2
+        my = (y1 + y2) / 2
+        await ctx.send(f"Midpoint: **({mx}, {my})**")
+
+    @commands.command(help="Find distance between two points. Example: !distance 2 3 6 11")
+    async def distance(self, ctx, x1: float, y1: float, x2: float, y2: float):
+        d = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        await ctx.send(f"Distance: **{d}**")
+
+    @commands.command(help="Reduce a fraction. Example: !fraction 24 36")
+    async def fraction(self, ctx, numerator: int, denominator: int):
+        if denominator == 0:
+            await ctx.send("Denominator cannot be zero.")
+            return
+
+        frac = Fraction(numerator, denominator)
+        await ctx.send(f"Reduced fraction: **{frac}**")
+
+    @commands.command(help="Convert decimal to fraction. Example: !decimaltofraction 0.75")
+    async def decimaltofraction(self, ctx, number: float):
+        frac = Fraction(number).limit_denominator()
+        await ctx.send(f"Fraction form: **{frac}**")
+
+    @commands.command(help="Convert fraction to decimal. Example: !fractiontodecimal 3 4")
+    async def fractiontodecimal(self, ctx, numerator: int, denominator: int):
+        if denominator == 0:
+            await ctx.send("Denominator cannot be zero.")
+            return
+        await ctx.send(f"Decimal form: **{numerator / denominator}**")
+
+    @commands.command(help="Convert to scientific notation. Example: !scientific 1250000")
+    async def scientific(self, ctx, number: float):
+        await ctx.send(f"Scientific notation: **{number:.6e}**")
+
+    @commands.command(help="Convert scientific notation to normal form. Example: !standard 1.25e6")
+    async def standard(self, ctx, number: float):
+        await ctx.send(f"Standard form: **{number}**")
+
+    @commands.command(help="Find mean of comma-separated numbers. Example: !mean 2,4,6,8")
+    async def mean(self, ctx, *, numbers: str):
+        try:
+            values = self.parse_number_list(numbers)
+            await ctx.send(f"Mean: **{statistics.mean(values)}**")
+        except Exception:
+            await ctx.send("Use comma-separated numbers like `!mean 2,4,6,8`.")
+
+    @commands.command(help="Find median of comma-separated numbers. Example: !median 2,4,6,8")
+    async def median(self, ctx, *, numbers: str):
+        try:
+            values = self.parse_number_list(numbers)
+            await ctx.send(f"Median: **{statistics.median(values)}**")
+        except Exception:
+            await ctx.send("Use comma-separated numbers like `!median 2,4,6,8`.")
+
+    @commands.command(help="Find mode of comma-separated numbers. Example: !mode 2,2,3,4")
+    async def mode(self, ctx, *, numbers: str):
+        try:
+            values = self.parse_number_list(numbers)
+            result = statistics.mode(values)
+            await ctx.send(f"Mode: **{result}**")
+        except statistics.StatisticsError:
+            await ctx.send("There is no single mode for that set.")
+        except Exception:
+            await ctx.send("Use comma-separated numbers like `!mode 2,2,3,4`.")
+
+    @commands.command(help="Find range of comma-separated numbers. Example: !rangeof 2,4,6,8")
+    async def rangeof(self, ctx, *, numbers: str):
+        try:
+            values = self.parse_number_list(numbers)
+            result = max(values) - min(values)
+            await ctx.send(f"Range: **{result}**")
+        except Exception:
+            await ctx.send("Use comma-separated numbers like `!rangeof 2,4,6,8`.")
+
+    @commands.command(help="Find population standard deviation. Example: !stddev 2,4,6,8")
+    async def stddev(self, ctx, *, numbers: str):
+        try:
+            values = self.parse_number_list(numbers)
+            result = statistics.pstdev(values)
+            await ctx.send(f"Population standard deviation: **{result}**")
+        except Exception:
+            await ctx.send("Use comma-separated numbers like `!stddev 2,4,6,8`.")
+
+    @commands.command(help="Find permutations nPr. Example: !perm 5 2")
+    async def perm(self, ctx, n: int, r: int):
+        if n < 0 or r < 0 or r > n:
+            await ctx.send("Use values where **n >= r >= 0**.")
+            return
+        result = math.perm(n, r)
+        await ctx.send(f"Permutations (nPr): **{result}**")
+
+    @commands.command(help="Find combinations nCr. Example: !comb 5 2")
+    async def comb(self, ctx, n: int, r: int):
+        if n < 0 or r < 0 or r > n:
+            await ctx.send("Use values where **n >= r >= 0**.")
+            return
+        result = math.comb(n, r)
+        await ctx.send(f"Combinations (nCr): **{result}**")
+
     @commands.command(help="Show all math commands.")
     async def mathhelp(self, ctx):
         await ctx.send(
@@ -185,7 +355,24 @@ class Math(commands.Cog):
             "!ftoc <fahrenheit>\n"
             "!inchestocm <inches>\n"
             "!cmtoinches <cm>\n"
-            "!solve <equation>"
+            "!solve <equation>\n"
+            "!quadratic <a> <b> <c>\n"
+            "!slope <x1> <y1> <x2> <y2>\n"
+            "!slopeintercept <m> <x> <y>\n"
+            "!midpoint <x1> <y1> <x2> <y2>\n"
+            "!distance <x1> <y1> <x2> <y2>\n"
+            "!fraction <numerator> <denominator>\n"
+            "!decimaltofraction <decimal>\n"
+            "!fractiontodecimal <numerator> <denominator>\n"
+            "!scientific <number>\n"
+            "!standard <scientific_number>\n"
+            "!mean <comma-separated numbers>\n"
+            "!median <comma-separated numbers>\n"
+            "!mode <comma-separated numbers>\n"
+            "!rangeof <comma-separated numbers>\n"
+            "!stddev <comma-separated numbers>\n"
+            "!perm <n> <r>\n"
+            "!comb <n> <r>"
         )
 
 
