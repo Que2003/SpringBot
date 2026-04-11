@@ -35,9 +35,9 @@ EXTENSIONS = [
     "cogs.history",
     "cogs.music",
     "cogs.math",
-    "cogs.news",
     "cogs.chat",
     "cogs.search",
+    "cogs.news",
 ]
 
 @bot.event
