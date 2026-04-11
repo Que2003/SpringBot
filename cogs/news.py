@@ -1,72 +1,151 @@
 import os
 import json
 import asyncio
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 
 import discord
 from discord.ext import commands, tasks
-import feedparser
 
 
 class News(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.feed_url = os.getenv("NEWS_FEED_URL", "https://apnews.com/index.rss")
+        self.api_key = (os.getenv("TAVILY_API_KEY") or "").strip()
         self.state_file = "news_state.json"
-        self.posted_links = self.load_state()
-        self.news_poster.start()
+        self.state = self.load_state()
+        self.live_news_loop.start()
 
     def cog_unload(self):
-        self.news_poster.cancel()
+        self.live_news_loop.cancel()
+
+    def default_state(self):
+        return {
+            "news_channel_id": 0,
+            "live_news_enabled": False,
+            "news_query": "breaking news",
+            "posted_urls": []
+        }
 
     def load_state(self):
         if not os.path.exists(self.state_file):
-            return []
+            return self.default_state()
+
         try:
             with open(self.state_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            if isinstance(data, list):
-                return data[-200:]
-            return []
+
+            default = self.default_state()
+            for key, value in default.items():
+                data.setdefault(key, value)
+
+            if not isinstance(data.get("posted_urls"), list):
+                data["posted_urls"] = []
+
+            data["posted_urls"] = data["posted_urls"][-300:]
+            return data
         except Exception:
-            return []
+            return self.default_state()
 
     def save_state(self):
+        self.state["posted_urls"] = self.state.get("posted_urls", [])[-300:]
         with open(self.state_file, "w", encoding="utf-8") as f:
-            json.dump(self.posted_links[-200:], f, indent=2)
+            json.dump(self.state, f, indent=2)
 
-    async def fetch_feed(self):
+    async def tavily_news_search(self, query, max_results=5):
+        if not self.api_key:
+            raise RuntimeError("Missing TAVILY_API_KEY in Railway variables.")
+
+        payload = {
+            "query": query,
+            "topic": "news",
+            "search_depth": "advanced",
+            "max_results": max_results,
+            "include_answer": "advanced",
+            "include_favicon": False,
+            "include_images": False,
+        }
+
+        body = json.dumps(payload).encode("utf-8")
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        request = urllib.request.Request(
+            "https://api.tavily.com/search",
+            data=body,
+            headers=headers,
+            method="POST"
+        )
+
+        def run_request():
+            with urllib.request.urlopen(request, timeout=45) as response:
+                return json.loads(response.read().decode("utf-8"))
+
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+        try:
+            return await loop.run_in_executor(None, run_request)
+        except urllib.error.HTTPError as e:
+            try:
+                details = e.read().decode("utf-8")
+            except Exception:
+                details = str(e)
+            raise RuntimeError(f"Tavily HTTP {e.code}: {details}")
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"Tavily connection error: {e.reason}")
+        except Exception as e:
+            raise RuntimeError(f"Tavily request failed: {e}")
 
-    def build_embed(self, entry):
-        title = getattr(entry, "title", "Untitled story")
-        link = getattr(entry, "link", None)
-        summary = getattr(entry, "summary", "")
-        published = getattr(entry, "published", None)
-
-        if len(summary) > 400:
-            summary = summary[:397] + "..."
+    def build_embed(self, result, index_label=None):
+        title = result.get("title", "Untitled")
+        url = result.get("url", "")
+        content = (result.get("content") or "").strip()
+        if len(content) > 350:
+            content = content[:347] + "..."
 
         embed = discord.Embed(
             title=title,
-            url=link,
-            description=summary or "New article posted.",
+            url=url if url else None,
+            description=content or "No summary available.",
             color=discord.Color.blue(),
             timestamp=datetime.now(timezone.utc)
         )
 
         embed.set_author(name="SpringBot Live News")
-        embed.set_footer(text="Source feed update")
+        if index_label:
+            embed.add_field(name="Result", value=index_label, inline=True)
 
-        if published:
-            embed.add_field(name="Published", value=published, inline=False)
+        published_date = result.get("published_date") or result.get("published")
+        if published_date:
+            embed.add_field(name="Published", value=str(published_date), inline=True)
 
+        source = result.get("url", "No URL")
+        embed.add_field(name="Source", value=source, inline=False)
+        embed.set_footer(text="Powered by Tavily News Search")
         return embed
 
-    @tasks.loop(minutes=10)
-    async def news_poster(self):
-        channel_id = getattr(self.bot, "news_channel_id", 0)
+    def extract_new_results(self, results):
+        posted = set(self.state.get("posted_urls", []))
+        fresh = []
+
+        for result in results:
+            url = result.get("url")
+            if not url:
+                continue
+            if url in posted:
+                continue
+            fresh.append(result)
+
+        return fresh
+
+    @tasks.loop(minutes=15)
+    async def live_news_loop(self):
+        if not self.state.get("live_news_enabled", False):
+            return
+
+        channel_id = int(self.state.get("news_channel_id", 0) or 0)
         if not channel_id:
             return
 
@@ -74,76 +153,167 @@ class News(commands.Cog):
         if channel is None:
             return
 
-        feed = await self.fetch_feed()
-        entries = getattr(feed, "entries", [])
+        query = self.state.get("news_query", "breaking news")
 
-        if not entries:
+        try:
+            data = await self.tavily_news_search(query, max_results=6)
+        except Exception as e:
+            print(f"Live news loop failed: {e}")
             return
 
-        new_entries = []
-        for entry in entries[:10]:
-            link = getattr(entry, "link", None)
-            if link and link not in self.posted_links:
-                new_entries.append(entry)
+        results = data.get("results", [])
+        fresh_results = self.extract_new_results(results)
 
-        if not new_entries:
+        if not fresh_results:
             return
 
-        for entry in reversed(new_entries):
-            link = getattr(entry, "link", None)
-            embed = self.build_embed(entry)
+        for result in reversed(fresh_results[:3]):
+            embed = self.build_embed(result)
             await channel.send(embed=embed)
-            if link:
-                self.posted_links.append(link)
+            url = result.get("url")
+            if url:
+                self.state["posted_urls"].append(url)
 
-        self.posted_links = self.posted_links[-200:]
         self.save_state()
 
-    @news_poster.before_loop
-    async def before_news_poster(self):
+    @live_news_loop.before_loop
+    async def before_live_news_loop(self):
         await self.bot.wait_until_ready()
 
-    @commands.command(help="Shows the current live news feed URL.")
-    async def newsfeed(self, ctx):
-        await ctx.send(f"Current feed: **{self.feed_url}**")
-
-    @commands.command(help="Tests the news feed and posts the newest headline in this channel.")
-    async def newstest(self, ctx):
-        feed = await self.fetch_feed()
-        entries = getattr(feed, "entries", [])
-
-        if not entries:
-            await ctx.send("No news entries were found.")
+    @commands.command(help="Search current news.")
+    async def newssearch(self, ctx, *, query: str):
+        try:
+            data = await self.tavily_news_search(query, max_results=5)
+        except Exception as e:
+            await ctx.send(f"News search failed: {e}")
             return
 
-        entry = entries[0]
-        embed = self.build_embed(entry)
-        await ctx.send("News feed test successful.")
+        answer = data.get("answer") or "No summary returned."
+        results = data.get("results", [])
+
+        if len(answer) > 900:
+            answer = answer[:897] + "..."
+
+        await ctx.send(f"**News Search:** {query}\n**Summary:** {answer}")
+
+        if not results:
+            await ctx.send("No news results found.")
+            return
+
+        for i, result in enumerate(results[:3], start=1):
+            embed = self.build_embed(result, index_label=str(i))
+            await ctx.send(embed=embed)
+
+    @commands.command(help="Show trending or breaking news.")
+    async def trendingnews(self, ctx):
+        try:
+            data = await self.tavily_news_search("breaking news", max_results=5)
+        except Exception as e:
+            await ctx.send(f"Trending news failed: {e}")
+            return
+
+        answer = data.get("answer") or "No summary returned."
+        results = data.get("results", [])
+
+        if len(answer) > 900:
+            answer = answer[:897] + "..."
+
+        await ctx.send(f"**Trending News Summary:** {answer}")
+
+        if not results:
+            await ctx.send("No trending news results found.")
+            return
+
+        for i, result in enumerate(results[:3], start=1):
+            embed = self.build_embed(result, index_label=str(i))
+            await ctx.send(embed=embed)
+
+    @commands.command(help="Test the live news system in this channel.")
+    async def newstest(self, ctx):
+        query = self.state.get("news_query", "breaking news")
+
+        try:
+            data = await self.tavily_news_search(query, max_results=3)
+        except Exception as e:
+            await ctx.send(f"News test failed: {e}")
+            return
+
+        results = data.get("results", [])
+        if not results:
+            await ctx.send("No test news results found.")
+            return
+
+        await ctx.send(f"News test successful for query: **{query}**")
+        embed = self.build_embed(results[0], index_label="Test")
         await ctx.send(embed=embed)
 
-    @commands.command(help="Sets this channel as the live news channel.")
+    @commands.command(help="Set this channel as the live news channel.")
     @commands.has_permissions(manage_guild=True)
     async def setnewschannel(self, ctx):
-        self.bot.news_channel_id = ctx.channel.id
-        await ctx.send(f"This channel is now the live news channel.\nChannel ID: **{ctx.channel.id}**")
+        self.state["news_channel_id"] = ctx.channel.id
+        self.save_state()
+        await ctx.send(
+            f"This channel is now the live news channel.\n"
+            f"Channel ID: **{ctx.channel.id}**"
+        )
 
-    @commands.command(help="Shows the currently configured news channel ID.")
+    @commands.command(help="Turn live news posting on.")
+    @commands.has_permissions(manage_guild=True)
+    async def liveon(self, ctx):
+        if not self.state.get("news_channel_id"):
+            self.state["news_channel_id"] = ctx.channel.id
+
+        self.state["live_news_enabled"] = True
+        self.save_state()
+        await ctx.send("Live news posting is now **ON**.")
+
+    @commands.command(help="Turn live news posting off.")
+    @commands.has_permissions(manage_guild=True)
+    async def liveoff(self, ctx):
+        self.state["live_news_enabled"] = False
+        self.save_state()
+        await ctx.send("Live news posting is now **OFF**.")
+
+    @commands.command(help="Set the live news topic query. Example: !setnewsquery cybersecurity")
+    @commands.has_permissions(manage_guild=True)
+    async def setnewsquery(self, ctx, *, query: str):
+        self.state["news_query"] = query.strip()
+        self.save_state()
+        await ctx.send(f"Live news query set to: **{self.state['news_query']}**")
+
+    @commands.command(help="Show current news settings.")
     async def newschannel(self, ctx):
-        channel_id = getattr(self.bot, "news_channel_id", 0)
-        if not channel_id:
-            await ctx.send("No live news channel is configured.")
-            return
-        await ctx.send(f"Current live news channel ID: **{channel_id}**")
+        channel_id = self.state.get("news_channel_id", 0)
+        live_enabled = self.state.get("live_news_enabled", False)
+        query = self.state.get("news_query", "breaking news")
 
-    @commands.command(help="Shows all news commands.")
+        await ctx.send(
+            f"News channel ID: **{channel_id}**\n"
+            f"Live news enabled: **{live_enabled}**\n"
+            f"Live news query: **{query}**"
+        )
+
+    @commands.command(help="Clear stored posted news links so live posting can start fresh.")
+    @commands.has_permissions(manage_guild=True)
+    async def clearnewsmemory(self, ctx):
+        self.state["posted_urls"] = []
+        self.save_state()
+        await ctx.send("Stored news memory cleared.")
+
+    @commands.command(help="Show all news commands.")
     async def newshelp(self, ctx):
         await ctx.send(
             "**News Commands**\n"
-            "!newsfeed - Show current feed URL\n"
-            "!newstest - Test the feed in the current channel\n"
-            "!setnewschannel - Set the current channel as the live news channel\n"
-            "!newschannel - Show current configured news channel ID\n"
-            "!newshelp - Show news commands"
+            "!newssearch <query> - search live news\n"
+            "!trendingnews - show trending or breaking news\n"
+            "!newstest - test the news system here\n"
+            "!setnewschannel - make this the live news channel\n"
+            "!liveon - turn live news posting on\n"
+            "!liveoff - turn live news posting off\n"
+            "!setnewsquery <query> - set the topic for live news\n"
+            "!newschannel - show current news settings\n"
+            "!clearnewsmemory - clear stored posted news links\n"
+            "!newshelp - show this list"
         )
 
 
