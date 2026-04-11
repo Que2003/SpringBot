@@ -8,7 +8,6 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = os.getenv("BOT_PREFIX", "!")
-NEWS_CHANNEL_ID = int(os.getenv("NEWS_CHANNEL_ID", "0"))
 
 if not TOKEN:
     raise RuntimeError("Missing DISCORD_TOKEN")
@@ -26,8 +25,6 @@ bot = commands.Bot(
     case_insensitive=True
 )
 
-bot.news_channel_id = NEWS_CHANNEL_ID
-
 EXTENSIONS = [
     "cogs.basic",
     "cogs.fun",
@@ -39,18 +36,17 @@ EXTENSIONS = [
     "cogs.music",
     "cogs.math",
     "cogs.news",
+    "cogs.chat",
 ]
 
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("SpringBot is online.")
-    print(f"News channel id: {bot.news_channel_id}")
 
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send("That command does not exist.")
         return
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("You are missing part of that command.")
