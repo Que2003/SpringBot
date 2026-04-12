@@ -28,7 +28,7 @@ class Music(commands.Cog):
 
         self.radio_stations = {
             "lofi": {
-                "name": "Lofi Girl",
+                "name": "Lofi Girl Style Radio",
                 "url": "https://play.streamafrica.net/lofiradio"
             },
             "jazz": {
@@ -42,6 +42,10 @@ class Music(commands.Cog):
             "news": {
                 "name": "BBC World Service",
                 "url": "http://stream.live.vc.bbcmedia.co.uk/bbc_world_service"
+            },
+            "classical": {
+                "name": "Classical Radio",
+                "url": "http://stream.radiotunes.com/classical"
             }
         }
 
@@ -111,6 +115,7 @@ class Music(commands.Cog):
             "source_name": source_name,
             "audio_source": audio_source,
             "query": query,
+            "is_radio": False,
         }
 
     async def start_next_song(self, guild_id):
@@ -223,7 +228,7 @@ class Music(commands.Cog):
             f"Source: **{song['source_name']}**"
         )
 
-    @commands.command(help="Play a live radio station. Example: !radio lofi")
+    @commands.command(help="Stream a live radio/music station. Example: !radio lofi")
     async def radio(self, ctx, station: str):
         voice = await self.ensure_voice(ctx)
         if voice is None:
@@ -239,6 +244,9 @@ class Music(commands.Cog):
         if voice.is_playing() or voice.is_paused():
             voice.stop()
 
+        guild_id = ctx.guild.id
+        self.queues[guild_id].clear()
+
         try:
             source = discord.FFmpegPCMAudio(
                 station_info["url"],
@@ -251,33 +259,26 @@ class Music(commands.Cog):
             return
 
         voice.play(source)
-        self.now_playing[ctx.guild.id] = {
+        self.now_playing[guild_id] = {
             "title": station_info["name"],
             "source_name": "Live Radio",
+            "is_radio": True,
         }
 
         await ctx.send(f"Now streaming live radio: **{station_info['name']}**")
 
-    @commands.command(help="Show available live radio stations.")
+    @commands.command(help="Show available live radio/music stations.")
     async def stations(self, ctx):
         await ctx.send(
-            "**Live Radio Stations**\n"
+            "**Live Stations**\n"
             "!radio lofi\n"
             "!radio jazz\n"
             "!radio hiphop\n"
-            "!radio news"
+            "!radio news\n"
+            "!radio classical"
         )
 
-    @commands.command(help="Stop the live radio stream or music.")
-    async def stopradio(self, ctx):
-        if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
-            ctx.voice_client.stop()
-            self.now_playing[ctx.guild.id] = None
-            await ctx.send("Stopped the radio/music stream.")
-        else:
-            await ctx.send("Nothing is playing.")
-
-    @commands.command(help="Pause current music.")
+    @commands.command(help="Pause current audio.")
     async def pause(self, ctx):
         if ctx.voice_client and ctx.voice_client.is_playing():
             ctx.voice_client.pause()
@@ -285,7 +286,7 @@ class Music(commands.Cog):
         else:
             await ctx.send("Nothing is playing.")
 
-    @commands.command(help="Resume paused music.")
+    @commands.command(help="Resume paused audio.")
     async def resume(self, ctx):
         if ctx.voice_client and ctx.voice_client.is_paused():
             ctx.voice_client.resume()
@@ -316,6 +317,15 @@ class Music(commands.Cog):
 
         await ctx.send("Stopped music and cleared queue.")
 
+    @commands.command(help="Stop the radio stream.")
+    async def stopradio(self, ctx):
+        if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
+            ctx.voice_client.stop()
+            self.now_playing[ctx.guild.id] = None
+            await ctx.send("Stopped the radio stream.")
+        else:
+            await ctx.send("No radio stream is playing.")
+
     @commands.command(help="Show current queue.")
     async def queue(self, ctx):
         guild_queue = self.queues.get(ctx.guild.id, deque())
@@ -330,7 +340,7 @@ class Music(commands.Cog):
 
         await ctx.send("**Queue:**\n" + "\n".join(lines))
 
-    @commands.command(help="Show current song.")
+    @commands.command(help="Show current audio.")
     async def nowplaying(self, ctx):
         song = self.now_playing.get(ctx.guild.id)
 
@@ -343,14 +353,15 @@ class Music(commands.Cog):
             f"Source: **{song['source_name']}**"
         )
 
-    @commands.command(help="Show music and radio bot status.")
+    @commands.command(help="Show music and live radio commands.")
     async def musichelp(self, ctx):
         ffmpeg_ok = bool(shutil.which("ffmpeg") or os.path.exists(self.ffmpeg_path))
         cookies_ok = os.path.exists(self.cookies_file)
 
         await ctx.send(
-            "**Music and Radio Commands**\n"
+            "**Music + Live Radio Commands**\n"
             "!join\n"
+            "!leave\n"
             "!play <song or link>\n"
             "!radio <station>\n"
             "!stations\n"
@@ -360,8 +371,7 @@ class Music(commands.Cog):
             "!stop\n"
             "!stopradio\n"
             "!queue\n"
-            "!nowplaying\n"
-            "!leave\n\n"
+            "!nowplaying\n\n"
             f"FFmpeg detected: **{ffmpeg_ok}**\n"
             f"Cookies file found: **{cookies_ok}**\n"
             f"FFmpeg path: **{self.ffmpeg_path}**"
