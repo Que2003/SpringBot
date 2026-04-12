@@ -1,222 +1,178 @@
+import json
 import os
-import asyncio
-from collections import deque
-from typing import Optional
+import random
+from discord.ext import commands
 
-import discord
-from discord.ext import commands, tasks
-import imageio_ffmpeg
 
-DEFAULT_VOLUME = float(os.getenv("DEFAULT_VOLUME", "0.5"))
-AUTO_DISCONNECT_MINUTES = int(os.getenv("AUTO_DISCONNECT_MINUTES", "10"))
-
-FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
-FFMPEG_OPTIONS = {
-    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-    "options": "-vn",
-}
-
-RADIO_PRESETS = {
-    "lofi": "https://stream.zeno.fm/fyn8eh3h5f8uv",
-    "jazz": "https://icecast.omroep.nl/radio6-jazz-bb-mp3",
-    "classical": "https://stream.live.vc.bbcmedia.co.uk/bbc_radio_three",
-    "news": "https://stream.live.vc.bbcmedia.co.uk/bbc_world_service",
-}
-
-class QueueItem:
-    def __init__(self, title: str, url: str):
-        self.title = title
-        self.url = url
-
-class GuildAudioState:
-    def __init__(self):
-        self.voice_client: Optional[discord.VoiceClient] = None
-        self.queue = deque()
-        self.current: Optional[QueueItem] = None
-        self.text_channel_id: Optional[int] = None
-        self.volume = DEFAULT_VOLUME
-        self.empty_since: Optional[float] = None
-        self.lock = asyncio.Lock()
-
-class Music(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+class Study(commands.Cog):
+    def __init__(self, bot):
         self.bot = bot
-        self.states: dict[int, GuildAudioState] = {}
-        self.disconnect_watcher.start()
+        self.file_path = "study_notes.json"
+        self.data = self.load_data()
 
-    def cog_unload(self):
-        self.disconnect_watcher.cancel()
+        self.flashcards = [
+            {"q": "What does DNS do?", "a": "It translates domain names into IP addresses."},
+            {"q": "What does DHCP do?", "a": "It automatically assigns IP settings to devices."},
+            {"q": "What is TCP?", "a": "A reliable connection-based transport protocol."},
+            {"q": "What is UDP?", "a": "A faster connectionless transport protocol."},
+            {"q": "Port 443?", "a": "HTTPS."},
+            {"q": "Port 22?", "a": "SSH."},
+            {"q": "Port 3389?", "a": "RDP."},
+            {"q": "What is a packet header?", "a": "Control information like source, destination, and protocol."}
+        ]
 
-    def get_state(self, guild_id: int) -> GuildAudioState:
-        if guild_id not in self.states:
-            self.states[guild_id] = GuildAudioState()
-        return self.states[guild_id]
+    def load_data(self):
+        if not os.path.exists(self.file_path):
+            return {}
 
-    async def ensure_voice(self, ctx: commands.Context) -> GuildAudioState:
-        if ctx.guild is None:
-            raise RuntimeError("This command only works in a server.")
-        state = self.get_state(ctx.guild.id)
-        if not ctx.author.voice or not ctx.author.voice.channel:
-            raise RuntimeError("Join a voice channel first.")
-        voice_channel = ctx.author.voice.channel
-        if state.voice_client and state.voice_client.is_connected():
-            if state.voice_client.channel != voice_channel:
-                await state.voice_client.move_to(voice_channel)
-        else:
-            state.voice_client = await voice_channel.connect(timeout=20, reconnect=True)
-        state.text_channel_id = ctx.channel.id
-        state.empty_since = None
-        return state
+        try:
+            with open(self.file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
 
-    async def start_next(self, guild: discord.Guild):
-        state = self.get_state(guild.id)
-        async with state.lock:
-            vc = state.voice_client
-            if not vc or not vc.is_connected():
-                return
-            if not state.queue:
-                state.current = None
-                return
+    def save_data(self):
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, indent=2)
 
-            item = state.queue.popleft()
-            state.current = item
+    def get_user_notes(self, user_id: int):
+        key = str(user_id)
+        if key not in self.data:
+            self.data[key] = []
+        return self.data[key]
 
-            def after_playing(error):
-                if error:
-                    print(f"PLAYER ERROR: {error}")
-                fut = asyncio.run_coroutine_threadsafe(self.start_next(guild), self.bot.loop)
-                try:
-                    fut.result()
-                except Exception as exc:
-                    print(f"QUEUE ERROR: {exc}")
+    @commands.command(help="Add a study note.")
+    async def addnote(self, ctx, *, note: str):
+        notes = self.get_user_notes(ctx.author.id)
+        notes.append(note)
+        self.save_data()
+        await ctx.send("Study note saved.")
 
-            source = discord.PCMVolumeTransformer(
-                discord.FFmpegPCMAudio(item.url, executable=FFMPEG_EXE, **FFMPEG_OPTIONS),
-                volume=state.volume,
-            )
-            vc.play(source, after=after_playing)
+    @commands.command(help="List your study notes.")
+    async def notes(self, ctx):
+        notes = self.get_user_notes(ctx.author.id)
 
-            channel = guild.get_channel(state.text_channel_id) if state.text_channel_id else None
-            if isinstance(channel, discord.TextChannel):
-                await channel.send(f"▶️ Now streaming: **{item.title}**")
-
-    @commands.command(name="join")
-    async def join_command(self, ctx: commands.Context):
-        state = await self.ensure_voice(ctx)
-        await ctx.send(f"Joined **{state.voice_client.channel}**")
-
-    @commands.command(name="radio")
-    async def radio_command(self, ctx: commands.Context, preset: str):
-        key = preset.lower()
-        if key not in RADIO_PRESETS:
-            await ctx.send("Available presets: " + ", ".join(RADIO_PRESETS.keys()))
+        if not notes:
+            await ctx.send("You have no saved study notes.")
             return
-        state = await self.ensure_voice(ctx)
-        state.queue.clear()
-        if state.voice_client.is_playing() or state.voice_client.is_paused():
-            state.voice_client.stop()
-        state.queue.append(QueueItem(f"{key.title()} Radio", RADIO_PRESETS[key]))
-        await self.start_next(ctx.guild)
 
-    @commands.command(name="stream")
-    async def stream_command(self, ctx: commands.Context, url: str):
-        state = await self.ensure_voice(ctx)
-        state.queue.clear()
-        if state.voice_client.is_playing() or state.voice_client.is_paused():
-            state.voice_client.stop()
-        state.queue.append(QueueItem(url, url))
-        await self.start_next(ctx.guild)
+        lines = [f"{i}. {note}" for i, note in enumerate(notes, start=1)]
+        output = "\n".join(lines)
 
-    @commands.command(name="queueadd")
-    async def queueadd_command(self, ctx: commands.Context, url: str):
-        state = await self.ensure_voice(ctx)
-        item = QueueItem(url, url)
-        state.queue.append(item)
-        if state.voice_client.is_playing() or state.voice_client.is_paused():
-            await ctx.send(f"Queued: **{item.title}**")
+        if len(output) > 1900:
+            output = output[:1900] + "..."
+
+        await ctx.send(f"**Your Study Notes**\n{output}")
+
+    @commands.command(help="Delete a study note by number.")
+    async def deletenote(self, ctx, index: int):
+        notes = self.get_user_notes(ctx.author.id)
+
+        if index < 1 or index > len(notes):
+            await ctx.send("That note number does not exist.")
+            return
+
+        removed = notes.pop(index - 1)
+        self.save_data()
+        await ctx.send(f"Deleted note:\n`{removed}`")
+
+    @commands.command(help="Get a random flashcard.")
+    async def flashcard(self, ctx):
+        card = random.choice(self.flashcards)
+        await ctx.send(f"**Flashcard**\nQ: {card['q']}\nUse `!showanswer` to reveal it.")
+        self.data[f"flashcard_{ctx.channel.id}"] = card["a"]
+        self.save_data()
+
+    @commands.command(help="Show the answer to the current flashcard.")
+    async def showanswer(self, ctx):
+        key = f"flashcard_{ctx.channel.id}"
+
+        if key not in self.data:
+            await ctx.send("There is no active flashcard in this channel.")
+            return
+
+        await ctx.send(f"**Answer:** {self.data[key]}")
+        del self.data[key]
+        self.save_data()
+
+    @commands.command(help="Give a quick quiz question.")
+    async def quizme(self, ctx):
+        card = random.choice(self.flashcards)
+        self.data[f"quiz_{ctx.channel.id}"] = card["a"].lower()
+        self.save_data()
+        await ctx.send(f"**Quiz**\n{card['q']}\nReply with `!quizanswer <your answer>`")
+
+    @commands.command(help="Answer the current quiz.")
+    async def quizanswer(self, ctx, *, answer: str):
+        key = f"quiz_{ctx.channel.id}"
+
+        if key not in self.data:
+            await ctx.send("There is no active quiz in this channel.")
+            return
+
+        correct = self.data[key]
+        guess = answer.lower().strip()
+
+        if guess == correct:
+            await ctx.send("Correct.")
         else:
-            await self.start_next(ctx.guild)
+            await ctx.send(f"Not quite. Correct answer: **{correct}**")
 
-    @commands.command(name="queue")
-    async def queue_command(self, ctx: commands.Context):
-        state = self.get_state(ctx.guild.id)
-        lines = []
-        if state.current:
-            lines.append(f"Now: **{state.current.title}**")
-        if state.queue:
-            for i, item in enumerate(list(state.queue)[:10], start=1):
-                lines.append(f"{i}. {item.title}")
-        if not lines:
-            lines.append("Queue is empty.")
-        await ctx.send("\n".join(lines))
+        del self.data[key]
+        self.save_data()
 
-    @commands.command(name="skip")
-    async def skip_command(self, ctx: commands.Context):
-        state = self.get_state(ctx.guild.id)
-        if state.voice_client and state.voice_client.is_playing():
-            state.voice_client.stop()
-            await ctx.send("Skipped.")
-        else:
-            await ctx.send("Nothing is playing.")
+    @commands.command(help="Generate a simple study plan.")
+    async def studyplan(self, ctx, *, topic: str):
+        await ctx.send(
+            f"**Study Plan for {topic}**\n"
+            "1. Learn the core definition.\n"
+            "2. Break it into 3-5 subtopics.\n"
+            "3. Take short notes in your own words.\n"
+            "4. Quiz yourself without looking.\n"
+            "5. Review weak spots.\n"
+            "6. Explain the topic out loud like you are teaching it."
+        )
 
-    @commands.command(name="stop")
-    async def stop_command(self, ctx: commands.Context):
-        state = self.get_state(ctx.guild.id)
-        state.queue.clear()
-        state.current = None
-        if state.voice_client and (state.voice_client.is_playing() or state.voice_client.is_paused()):
-            state.voice_client.stop()
-        await ctx.send("Stopped streaming and cleared the queue.")
+    @commands.command(help="Gives a focus/study tip.")
+    async def focus(self, ctx):
+        tips = [
+            "Use 25 minutes of focus, then take a 5-minute break.",
+            "Put your phone out of reach while studying.",
+            "Quiz yourself instead of only rereading notes.",
+            "Study the hardest thing first while your brain is fresh.",
+            "Teach the topic out loud to expose weak areas."
+        ]
+        await ctx.send(random.choice(tips))
 
-    @commands.command(name="leave")
-    async def leave_command(self, ctx: commands.Context):
-        state = self.get_state(ctx.guild.id)
-        state.queue.clear()
-        state.current = None
-        if state.voice_client and state.voice_client.is_connected():
-            await state.voice_client.disconnect()
-            state.voice_client = None
-            await ctx.send("Disconnected.")
-        else:
-            await ctx.send("I'm not in a voice channel.")
+    @commands.command(help="Explain a good way to study.")
+    async def howtostudy(self, ctx):
+        await ctx.send(
+            "Best way to study:\n"
+            "- break topics into chunks\n"
+            "- write short notes\n"
+            "- quiz yourself\n"
+            "- repeat what you missed\n"
+            "- do not just reread forever"
+        )
 
-    @commands.command(name="volume")
-    async def volume_command(self, ctx: commands.Context, value: int):
-        state = self.get_state(ctx.guild.id)
-        state.volume = max(0, min(value, 100)) / 100
-        if state.voice_client and state.voice_client.source:
-            state.voice_client.source.volume = state.volume
-        await ctx.send(f"Volume set to `{value}%`")
+    @commands.command(help="Shows study commands.")
+    async def studyhelp(self, ctx):
+        await ctx.send(
+            "**Study Commands**\n"
+            "!addnote <note>\n"
+            "!notes\n"
+            "!deletenote <number>\n"
+            "!flashcard\n"
+            "!showanswer\n"
+            "!quizme\n"
+            "!quizanswer <answer>\n"
+            "!studyplan <topic>\n"
+            "!focus\n"
+            "!howtostudy\n"
+            "!studyhelp"
+        )
 
-    @commands.command(name="nowplaying", aliases=["np"])
-    async def nowplaying_command(self, ctx: commands.Context):
-        state = self.get_state(ctx.guild.id)
-        await ctx.send(f"🎵 Now streaming: **{state.current.title}**" if state.current else "Nothing is streaming.")
 
-    @tasks.loop(minutes=1)
-    async def disconnect_watcher(self):
-        now = asyncio.get_running_loop().time()
-        for state in list(self.states.values()):
-            vc = state.voice_client
-            if not vc or not vc.is_connected() or not vc.channel:
-                continue
-            non_bot_members = [m for m in vc.channel.members if not m.bot]
-            if non_bot_members or vc.is_playing() or vc.is_paused():
-                state.empty_since = None
-                continue
-            if state.empty_since is None:
-                state.empty_since = now
-                continue
-            if now - state.empty_since >= AUTO_DISCONNECT_MINUTES * 60:
-                await vc.disconnect()
-                state.voice_client = None
-                state.current = None
-                state.queue.clear()
-                state.empty_since = None
-
-    @disconnect_watcher.before_loop
-    async def before_disconnect(self):
-        await self.bot.wait_until_ready()
-
-async def setup(bot: commands.Bot):
-    await bot.add_cog(Music(bot))
+async def setup(bot):
+    await bot.add_cog(Study(bot))
