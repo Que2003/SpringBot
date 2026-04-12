@@ -44,6 +44,9 @@ EXTENSIONS = [
     "cogs.wellness",
     "cogs.study",
     "cogs.reference",
+    "cogs.economy",
+    "cogs.casino",
+    "cogs.quotes",
 ]
 
 @bot.event
