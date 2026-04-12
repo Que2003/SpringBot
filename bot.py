@@ -41,6 +41,8 @@ EXTENSIONS = [
     "cogs.voicechat",
     "cogs.welcome",
     "cogs.games",
+    "cogs.wellness",
+    "cogs.study",
 ]
 
 @bot.event
