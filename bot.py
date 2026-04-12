@@ -43,6 +43,7 @@ EXTENSIONS = [
     "cogs.games",
     "cogs.wellness",
     "cogs.study",
+    "cogs.reference",
 ]
 
 @bot.event
