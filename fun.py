@@ -1,6 +1,46 @@
+import os
+import json
 import random
 import discord
 from discord.ext import commands
+
+ECONOMY_FILE = "economy.json"
+
+
+# =========================
+# ECONOMY HELPERS
+# =========================
+def load_economy():
+    if not os.path.exists(ECONOMY_FILE):
+        with open(ECONOMY_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f, indent=4)
+    with open(ECONOMY_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_economy(data):
+    with open(ECONOMY_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+
+def ensure_user(data, user_id: str):
+    if user_id not in data:
+        data[user_id] = {
+            "coins": 0,
+            "bank": 0,
+            "last_daily": 0,
+            "last_work": 0,
+            "last_crime": 0,
+            "last_beg": 0,
+        }
+
+
+def award_coins(user_id: int, amount: int):
+    data = load_economy()
+    uid = str(user_id)
+    ensure_user(data, uid)
+    data[uid]["coins"] += amount
+    save_economy(data)
 
 
 # =========================
@@ -31,16 +71,21 @@ class TicTacToeButton(discord.ui.Button):
         view.board[self.y][self.x] = symbol
         self.label = symbol
         self.disabled = True
-        self.style = (
-            discord.ButtonStyle.danger if symbol == "X" else discord.ButtonStyle.success
-        )
+        self.style = discord.ButtonStyle.danger if symbol == "X" else discord.ButtonStyle.success
 
         winner = view.check_winner()
         if winner:
             for child in view.children:
                 child.disabled = True
+
+            reward = 120
+            award_coins(winner.id, reward)
+
             await interaction.response.edit_message(
-                content=f"**Tic Tac Toe**\n{winner.mention} wins.",
+                content=(
+                    f"**Tic Tac Toe**\n"
+                    f"{winner.mention} wins and earned **{reward:,} Spring Coins**."
+                ),
                 view=view,
             )
             view.stop()
@@ -176,7 +221,7 @@ class BlackjackView(discord.ui.View):
         await interaction.response.edit_message(content=text, view=self)
 
     async def on_timeout(self):
-        game = self.cog.blackjack_games.pop(self.player_id, None)
+        self.cog.blackjack_games.pop(self.player_id, None)
         for child in self.children:
             child.disabled = True
 
@@ -199,20 +244,23 @@ def build_uno_deck():
         for action in UNO_ACTIONS:
             deck.append(f"{color} {action}")
             deck.append(f"{color} {action}")
-    deck += ["Wild", "Wild", "Wild", "Wild", "Wild Draw Four", "Wild Draw Four", "Wild Draw Four", "Wild Draw Four"]
+    deck += [
+        "Wild", "Wild", "Wild", "Wild",
+        "Wild Draw Four", "Wild Draw Four", "Wild Draw Four", "Wild Draw Four"
+    ]
     random.shuffle(deck)
     return deck
 
 
 def uno_card_matches(card: str, top_card: str, forced_color: str | None):
     if forced_color:
-        if card.startswith(forced_color) or card.startswith("Wild"):
-            return True
-        return False
+        return card.startswith(forced_color) or card.startswith("Wild")
 
-    if card.startswith("Wild") or top_card.startswith("Wild"):
-        if top_card.startswith("Wild") and not forced_color:
-            return True
+    if card.startswith("Wild"):
+        return True
+
+    if top_card.startswith("Wild"):
+        return True
 
     card_parts = card.split(" ", 1)
     top_parts = top_card.split(" ", 1)
@@ -221,9 +269,6 @@ def uno_card_matches(card: str, top_card: str, forced_color: str | None):
         card_color, card_value = card_parts
         top_color, top_value = top_parts
         return card_color == top_color or card_value == top_value
-
-    if card.startswith("Wild"):
-        return True
 
     return False
 
@@ -364,7 +409,7 @@ class Fun(commands.Cog):
         ]
 
     # =========================
-    # Helper Methods
+    # BLACKJACK HELPERS
     # =========================
     def blackjack_status_text(self, user_id: int):
         game = self.blackjack_games[user_id]
@@ -387,10 +432,17 @@ class Fun(commands.Cog):
             game["dealer"].append(game["deck"].pop())
             dealer_total = hand_value(game["dealer"])
 
+        reward_text = ""
         if dealer_total > 21:
+            reward = 100
+            award_coins(user_id, reward)
             result = "Dealer busted. You win."
+            reward_text = f"\n**Reward:** {reward:,} Spring Coins"
         elif player_total > dealer_total:
+            reward = 100
+            award_coins(user_id, reward)
             result = "You win."
+            reward_text = f"\n**Reward:** {reward:,} Spring Coins"
         elif dealer_total > player_total:
             result = "Dealer wins."
         else:
@@ -400,7 +452,7 @@ class Fun(commands.Cog):
             "**Blackjack - Final**\n"
             f"Dealer: {format_hand(game['dealer'])} ({dealer_total})\n"
             f"You: {format_hand(game['player'])} ({player_total})\n\n"
-            f"**{result}**"
+            f"**{result}**{reward_text}"
         )
 
         self.blackjack_games.pop(user_id, None)
@@ -433,6 +485,9 @@ class Fun(commands.Cog):
             return None
         return self.blackjack_finish_text(user_id), True
 
+    # =========================
+    # UNO HELPERS
+    # =========================
     def uno_text(self, user_id: int):
         game = self.uno_games[user_id]
         player_hand = ", ".join(game["player"]) if game["player"] else "No cards"
@@ -458,7 +513,7 @@ class Fun(commands.Cog):
                     game["deck"] = build_uno_deck()
                 drawn = game["deck"].pop()
                 game["bot"].append(drawn)
-                log.append(f"SpringBot drew a card.")
+                log.append("SpringBot drew a card.")
                 playable = [card for card in game["bot"] if uno_card_matches(card, game["top"], game["forced_color"])]
                 if not playable:
                     break
@@ -517,10 +572,12 @@ class Fun(commands.Cog):
         log = [f"You played **{card}**."]
 
         if not game["player"]:
+            reward = 150
+            award_coins(user_id, reward)
             text = (
                 "**Uno vs SpringBot**\n"
                 f"Top card: {game['top']}\n\n"
-                "**You win.**"
+                f"**You win and earned {reward:,} Spring Coins.**"
             )
             self.uno_games.pop(user_id, None)
             return text, True
@@ -593,7 +650,7 @@ class Fun(commands.Cog):
         return self.uno_text(user_id) + "\n\n" + "\n".join(log), False
 
     # =========================
-    # Existing Fun Commands
+    # EXISTING FUN COMMANDS
     # =========================
     @commands.command(help="Tells a genuinely funny random joke.")
     async def joke(self, ctx):
@@ -647,7 +704,7 @@ class Fun(commands.Cog):
         await ctx.send(f"Question: {question}\nAnswer: **{random.choice(responses)}**")
 
     # =========================
-    # New Game Commands
+    # GAME COMMANDS
     # =========================
     @commands.command(help="Start a tic tac toe match against another member.")
     async def tictactoe(self, ctx, member: discord.Member):
@@ -696,11 +753,13 @@ class Fun(commands.Cog):
             return
 
         if player_total == 21:
+            reward = 150
+            award_coins(ctx.author.id, reward)
             text = (
                 "**Blackjack - Final**\n"
                 f"Dealer: {format_hand(dealer)} ({dealer_total})\n"
                 f"You: {format_hand(player)} ({player_total})\n\n"
-                "**Blackjack. You win.**"
+                f"**Blackjack. You win.**\n**Reward:** {reward:,} Spring Coins"
             )
             self.blackjack_games.pop(ctx.author.id, None)
             await ctx.send(text)
@@ -822,11 +881,11 @@ class Fun(commands.Cog):
             "`!roll` - roll a die\n"
             "`!say <message>` - make the bot repeat you\n"
             "`!eightball <question>` - chaotic magic 8-ball\n"
-            "`!tictactoe @user` - play tic tac toe\n"
-            "`!blackjack` - start blackjack\n"
+            "`!tictactoe @user` - play tic tac toe for coins\n"
+            "`!blackjack` - start blackjack for coins\n"
             "`!hit` - hit in blackjack\n"
             "`!stand` - stand in blackjack\n"
-            "`!uno` - start Uno vs SpringBot\n"
+            "`!uno` - start Uno vs SpringBot for coins\n"
             "`!unoplay` - play first valid Uno card\n"
             "`!unodraw` - draw a card in Uno\n"
             "`!unohand` - show your Uno hand\n"
