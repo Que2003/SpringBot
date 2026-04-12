@@ -1,193 +1,356 @@
 import os
 import json
 import random
-from datetime import datetime, timedelta, timezone
-
+import time
 import discord
 from discord.ext import commands
+
+ECONOMY_FILE = "economy.json"
+
+
+def load_economy():
+    if not os.path.exists(ECONOMY_FILE):
+        with open(ECONOMY_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f, indent=4)
+    with open(ECONOMY_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_economy(data):
+    with open(ECONOMY_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+
+def ensure_user(data, user_id: str):
+    if user_id not in data:
+        data[user_id] = {
+            "coins": 0,
+            "bank": 0,
+            "last_daily": 0,
+            "last_work": 0,
+            "last_crime": 0,
+            "last_beg": 0,
+        }
+
+
+def format_coins(amount: int) -> str:
+    return f"{amount:,} Spring Coins"
 
 
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.file_path = "economy.json"
-        self.currency_name = "SpringCoins"
-        self.data = self.load_data()
 
-    def load_data(self):
-        if not os.path.exists(self.file_path):
-            return {}
-
-        try:
-            with open(self.file_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            return data if isinstance(data, dict) else {}
-        except Exception:
-            return {}
-
-    def save_data(self):
-        with open(self.file_path, "w", encoding="utf-8") as f:
-            json.dump(self.data, f, indent=2)
-
-    def get_user(self, guild_id: int, user_id: int):
-        guild_key = str(guild_id)
-        user_key = str(user_id)
-
-        if guild_key not in self.data:
-            self.data[guild_key] = {}
-
-        if user_key not in self.data[guild_key]:
-            self.data[guild_key][user_key] = {
-                "balance": 500,
-                "last_daily": None,
-                "last_work": None,
-                "wins": 0,
-                "losses": 0
-            }
-
-        return self.data[guild_key][user_key]
-
-    def get_balance(self, guild_id: int, user_id: int):
-        return int(self.get_user(guild_id, user_id)["balance"])
-
-    def add_balance(self, guild_id: int, user_id: int, amount: int):
-        user = self.get_user(guild_id, user_id)
-        user["balance"] = max(0, int(user["balance"]) + int(amount))
-        self.save_data()
-
-    def can_claim_time(self, last_time_str, cooldown_hours: int):
-        if not last_time_str:
-            return True, None
-
-        try:
-            last_time = datetime.fromisoformat(last_time_str)
-        except Exception:
-            return True, None
-
-        now = datetime.now(timezone.utc)
-        next_time = last_time + timedelta(hours=cooldown_hours)
-
-        if now >= next_time:
-            return True, None
-
-        remaining = next_time - now
-        return False, remaining
-
-    @commands.command(help="Show your SpringCoins balance.")
+    @commands.command(help="Check your Spring Coin balance.")
     async def balance(self, ctx, member: discord.Member = None):
-        member = member or ctx.author
-        bal = self.get_balance(ctx.guild.id, member.id)
-        await ctx.send(f"{member.mention} has **{bal} {self.currency_name}**.")
+        target = member or ctx.author
+        data = load_economy()
+        user_id = str(target.id)
+        ensure_user(data, user_id)
+        save_economy(data)
 
-    @commands.command(help="Claim your daily SpringCoins.")
+        wallet = data[user_id]["coins"]
+        bank = data[user_id]["bank"]
+
+        embed = discord.Embed(title=f"{target.display_name}'s Balance")
+        embed.add_field(name="Wallet", value=f"{wallet:,} Spring Coins", inline=True)
+        embed.add_field(name="Bank", value=f"{bank:,} Spring Coins", inline=True)
+        embed.add_field(name="Total", value=f"{wallet + bank:,} Spring Coins", inline=False)
+        await ctx.send(embed=embed)
+
+    @commands.command(help="Claim your daily Spring Coins.")
     async def daily(self, ctx):
-        user = self.get_user(ctx.guild.id, ctx.author.id)
-        allowed, remaining = self.can_claim_time(user.get("last_daily"), 24)
+        data = load_economy()
+        user_id = str(ctx.author.id)
+        ensure_user(data, user_id)
 
-        if not allowed:
-            hours = remaining.seconds // 3600
-            minutes = (remaining.seconds % 3600) // 60
-            await ctx.send(f"You already claimed daily. Try again in **{hours}h {minutes}m**.")
+        now = int(time.time())
+        cooldown = 86400
+        elapsed = now - data[user_id]["last_daily"]
+
+        if elapsed < cooldown:
+            remaining = cooldown - elapsed
+            hours = remaining // 3600
+            minutes = (remaining % 3600) // 60
+            await ctx.send(f"You already claimed your daily reward. Try again in **{hours}h {minutes}m**.")
             return
 
-        reward = random.randint(150, 350)
-        user["balance"] += reward
-        user["last_daily"] = datetime.now(timezone.utc).isoformat()
-        self.save_data()
+        reward = random.randint(200, 450)
+        data[user_id]["coins"] += reward
+        data[user_id]["last_daily"] = now
+        save_economy(data)
 
-        await ctx.send(f"You claimed **{reward} {self.currency_name}**.")
+        await ctx.send(f"{ctx.author.mention} claimed **{reward:,} Spring Coins** from `!daily`.")
 
-    @commands.command(help="Work for SpringCoins.")
+    @commands.command(help="Work for Spring Coins.")
     async def work(self, ctx):
-        user = self.get_user(ctx.guild.id, ctx.author.id)
-        allowed, remaining = self.can_claim_time(user.get("last_work"), 1)
+        jobs = [
+            "fixed a broken router",
+            "patched a server",
+            "installed a switch",
+            "ran cable through the walls",
+            "reset a suspicious password",
+            "cleaned malware off a laptop",
+            "repaired a cracked phone",
+            "built a gaming setup",
+            "helped the help desk survive",
+            "optimized a laggy PC",
+        ]
 
-        if not allowed:
-            minutes = remaining.seconds // 60
-            seconds = remaining.seconds % 60
+        data = load_economy()
+        user_id = str(ctx.author.id)
+        ensure_user(data, user_id)
+
+        now = int(time.time())
+        cooldown = 3600
+        elapsed = now - data[user_id]["last_work"]
+
+        if elapsed < cooldown:
+            remaining = cooldown - elapsed
+            minutes = remaining // 60
+            seconds = remaining % 60
             await ctx.send(f"You already worked recently. Try again in **{minutes}m {seconds}s**.")
             return
 
-        jobs = [
-            "fixed a broken router",
-            "patched a suspicious server",
-            "helped someone reset their password",
-            "installed a network switch",
-            "cleaned malware off a computer",
-            "helped SpringBot with paperwork",
-            "moderated chaos in the server",
-            "ran diagnostics on a cursed laptop"
+        reward = random.randint(80, 220)
+        job = random.choice(jobs)
+        data[user_id]["coins"] += reward
+        data[user_id]["last_work"] = now
+        save_economy(data)
+
+        await ctx.send(f"{ctx.author.mention} {job} and earned **{reward:,} Spring Coins**.")
+
+    @commands.command(help="Take a risky chance to earn or lose Spring Coins.")
+    async def crime(self, ctx):
+        success_lines = [
+            "You pulled off a digital heist.",
+            "You cracked the vault.",
+            "You ran the play and got away clean.",
+            "You snatched the loot and vanished.",
+            "You hustled the underground market.",
+        ]
+        fail_lines = [
+            "You got caught instantly.",
+            "Security folded you.",
+            "You left fingerprints everywhere.",
+            "Your getaway plan was terrible.",
+            "You tripped the alarm and lost everything.",
         ]
 
-        reward = random.randint(40, 120)
-        user["balance"] += reward
-        user["last_work"] = datetime.now(timezone.utc).isoformat()
-        self.save_data()
+        data = load_economy()
+        user_id = str(ctx.author.id)
+        ensure_user(data, user_id)
 
-        await ctx.send(
-            f"You **{random.choice(jobs)}** and earned **{reward} {self.currency_name}**."
-        )
+        now = int(time.time())
+        cooldown = 7200
+        elapsed = now - data[user_id]["last_crime"]
 
-    @commands.command(help="Give SpringCoins to another user. Example: !pay @user 100")
-    async def pay(self, ctx, member: discord.Member, amount: int):
+        if elapsed < cooldown:
+            remaining = cooldown - elapsed
+            minutes = remaining // 60
+            await ctx.send(f"`!crime` is on cooldown. Try again in **{minutes}m**.")
+            return
+
+        data[user_id]["last_crime"] = now
+
+        if random.random() < 0.55:
+            reward = random.randint(150, 500)
+            data[user_id]["coins"] += reward
+            save_economy(data)
+            await ctx.send(f"{ctx.author.mention} {random.choice(success_lines)} You gained **{reward:,} Spring Coins**.")
+        else:
+            loss = random.randint(50, 250)
+            loss = min(loss, data[user_id]["coins"])
+            data[user_id]["coins"] -= loss
+            save_economy(data)
+            await ctx.send(f"{ctx.author.mention} {random.choice(fail_lines)} You lost **{loss:,} Spring Coins**.")
+
+    @commands.command(help="Beg for a few Spring Coins.")
+    async def beg(self, ctx):
+        donors = [
+            "a rich stranger",
+            "a bored millionaire",
+            "a mysterious trader",
+            "a server legend",
+            "a tired admin",
+            "an NPC with pity",
+        ]
+
+        data = load_economy()
+        user_id = str(ctx.author.id)
+        ensure_user(data, user_id)
+
+        now = int(time.time())
+        cooldown = 1800
+        elapsed = now - data[user_id]["last_beg"]
+
+        if elapsed < cooldown:
+            remaining = cooldown - elapsed
+            minutes = remaining // 60
+            seconds = remaining % 60
+            await ctx.send(f"`!beg` is on cooldown. Try again in **{minutes}m {seconds}s**.")
+            return
+
+        reward = random.randint(15, 90)
+        data[user_id]["coins"] += reward
+        data[user_id]["last_beg"] = now
+        save_economy(data)
+
+        await ctx.send(f"{random.choice(donors)} gave {ctx.author.mention} **{reward:,} Spring Coins**.")
+
+    @commands.command(help="Deposit Spring Coins into your bank.")
+    async def deposit(self, ctx, amount: str):
+        data = load_economy()
+        user_id = str(ctx.author.id)
+        ensure_user(data, user_id)
+
+        wallet = data[user_id]["coins"]
+
+        if amount.lower() == "all":
+            amount_value = wallet
+        else:
+            if not amount.isdigit():
+                await ctx.send("Use a number or `all`.")
+                return
+            amount_value = int(amount)
+
+        if amount_value <= 0:
+            await ctx.send("Deposit amount must be more than 0.")
+            return
+
+        if amount_value > wallet:
+            await ctx.send("You do not have that many Spring Coins in your wallet.")
+            return
+
+        data[user_id]["coins"] -= amount_value
+        data[user_id]["bank"] += amount_value
+        save_economy(data)
+
+        await ctx.send(f"{ctx.author.mention} deposited **{amount_value:,} Spring Coins** into the bank.")
+
+    @commands.command(help="Withdraw Spring Coins from your bank.")
+    async def withdraw(self, ctx, amount: str):
+        data = load_economy()
+        user_id = str(ctx.author.id)
+        ensure_user(data, user_id)
+
+        bank = data[user_id]["bank"]
+
+        if amount.lower() == "all":
+            amount_value = bank
+        else:
+            if not amount.isdigit():
+                await ctx.send("Use a number or `all`.")
+                return
+            amount_value = int(amount)
+
+        if amount_value <= 0:
+            await ctx.send("Withdraw amount must be more than 0.")
+            return
+
+        if amount_value > bank:
+            await ctx.send("You do not have that many Spring Coins in the bank.")
+            return
+
+        data[user_id]["bank"] -= amount_value
+        data[user_id]["coins"] += amount_value
+        save_economy(data)
+
+        await ctx.send(f"{ctx.author.mention} withdrew **{amount_value:,} Spring Coins** from the bank.")
+
+    @commands.command(help="Give Spring Coins to another user.")
+    async def givecoins(self, ctx, member: discord.Member, amount: int):
         if member.bot:
-            await ctx.send("You cannot pay bots.")
+            await ctx.send("You cannot give coins to bots.")
             return
 
         if member.id == ctx.author.id:
-            await ctx.send("You cannot pay yourself.")
+            await ctx.send("You cannot give coins to yourself.")
             return
 
         if amount <= 0:
-            await ctx.send("Enter a valid amount greater than 0.")
+            await ctx.send("Amount must be greater than 0.")
             return
 
-        sender_balance = self.get_balance(ctx.guild.id, ctx.author.id)
-        if amount > sender_balance:
-            await ctx.send("You do not have enough SpringCoins.")
+        data = load_economy()
+        giver_id = str(ctx.author.id)
+        receiver_id = str(member.id)
+
+        ensure_user(data, giver_id)
+        ensure_user(data, receiver_id)
+
+        if data[giver_id]["coins"] < amount:
+            await ctx.send("You do not have enough Spring Coins.")
             return
 
-        self.add_balance(ctx.guild.id, ctx.author.id, -amount)
-        self.add_balance(ctx.guild.id, member.id, amount)
+        data[giver_id]["coins"] -= amount
+        data[receiver_id]["coins"] += amount
+        save_economy(data)
 
-        await ctx.send(
-            f"{ctx.author.mention} sent **{amount} {self.currency_name}** to {member.mention}."
-        )
+        await ctx.send(f"{ctx.author.mention} gave {member.mention} **{amount:,} Spring Coins**.")
 
-    @commands.command(help="Show the richest users in the server.")
+    @commands.command(help="Show the richest players in the server.")
     async def leaderboard(self, ctx):
-        guild_key = str(ctx.guild.id)
-        guild_data = self.data.get(guild_key, {})
+        data = load_economy()
+        members = []
 
-        if not guild_data:
-            await ctx.send("No economy data yet.")
+        for user_id, info in data.items():
+            member = ctx.guild.get_member(int(user_id))
+            if member:
+                total = info.get("coins", 0) + info.get("bank", 0)
+                members.append((member.display_name, total))
+
+        members.sort(key=lambda x: x[1], reverse=True)
+        top = members[:10]
+
+        if not top:
+            await ctx.send("No leaderboard data yet.")
             return
-
-        sorted_users = sorted(
-            guild_data.items(),
-            key=lambda item: int(item[1].get("balance", 0)),
-            reverse=True
-        )[:10]
 
         lines = []
-        for i, (user_id, info) in enumerate(sorted_users, start=1):
-            member = ctx.guild.get_member(int(user_id))
-            name = member.display_name if member else f"User {user_id}"
-            lines.append(f"{i}. **{name}** — {info.get('balance', 0)} {self.currency_name}")
+        for i, (name, total) in enumerate(top, start=1):
+            lines.append(f"**{i}.** {name} — {total:,} Spring Coins")
 
-        await ctx.send("**SpringCoins Leaderboard**\n" + "\n".join(lines))
+        embed = discord.Embed(title="SpringBot Leaderboard", description="\n".join(lines))
+        await ctx.send(embed=embed)
 
-    @commands.command(help="Show economy commands.")
-    async def economyhelp(self, ctx):
-        await ctx.send(
-            "**Economy Commands**\n"
-            "!balance [@user]\n"
-            "!daily\n"
-            "!work\n"
-            "!pay @user <amount>\n"
-            "!leaderboard\n"
-            "!economyhelp"
-        )
+    @commands.command(help="Admin only: add Spring Coins to a user.")
+    @commands.has_permissions(administrator=True)
+    async def addcoins(self, ctx, member: discord.Member, amount: int):
+        if amount <= 0:
+            await ctx.send("Amount must be greater than 0.")
+            return
+
+        data = load_economy()
+        user_id = str(member.id)
+        ensure_user(data, user_id)
+
+        data[user_id]["coins"] += amount
+        save_economy(data)
+
+        await ctx.send(f"Added **{amount:,} Spring Coins** to {member.mention}.")
+
+    @commands.command(help="Admin only: remove Spring Coins from a user.")
+    @commands.has_permissions(administrator=True)
+    async def removecoins(self, ctx, member: discord.Member, amount: int):
+        if amount <= 0:
+            await ctx.send("Amount must be greater than 0.")
+            return
+
+        data = load_economy()
+        user_id = str(member.id)
+        ensure_user(data, user_id)
+
+        data[user_id]["coins"] = max(0, data[user_id]["coins"] - amount)
+        save_economy(data)
+
+        await ctx.send(f"Removed **{amount:,} Spring Coins** from {member.mention}.")
+
+    @addcoins.error
+    @removecoins.error
+    async def economy_admin_error(self, ctx, error):
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.send("You need administrator permissions for that command.")
 
 
 async def setup(bot):
