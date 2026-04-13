@@ -1,8 +1,4 @@
 discord.py[voice]
 python-dotenv
 yt-dlp
-davey
-feedparser
-edge-tts
-discord-ext-voice-recv
-PyNaC1
+PyNaCl
