@@ -217,83 +217,43 @@ def build_help_embed() -> discord.Embed:
 
     embed.add_field(
         name="Core",
-        value=(
-            "`!help`\n"
-            "`!about`\n"
-            "`!ping`\n"
-            "`!uptime`\n"
-            "`!prefix`"
-        ),
+        value="`!help`\n`!about`\n`!ping`\n`!uptime`\n`!prefix`",
         inline=False
     )
 
     embed.add_field(
         name="Server",
-        value=(
-            "`!rules`\n"
-            "`!welcome`\n"
-            "`!goodbye`\n"
-            "`!setwelcome`\n"
-            "`!setgoodbye`\n"
-            "`!testwelcome`\n"
-            "`!testgoodbye`"
-        ),
+        value="`!rules`\n`!welcome`\n`!goodbye`\n`!setwelcome`\n`!setgoodbye`\n`!testwelcome`\n`!testgoodbye`",
         inline=False
     )
 
     embed.add_field(
         name="Utility",
-        value=(
-            "`!userinfo`\n"
-            "`!serverinfo`\n"
-            "`!membercount`\n"
-            "`!avatar`"
-        ),
+        value="`!userinfo`\n`!serverinfo`\n`!membercount`\n`!avatar`",
         inline=False
     )
 
     embed.add_field(
         name="Fun",
-        value=(
-            "`!roast`\n"
-            "`!8ball`\n"
-            "`!coinflip`\n"
-            "`!roll`"
-        ),
+        value="`!roast`\n`!8ball`\n`!coinflip`\n`!roll`",
         inline=False
     )
 
     embed.add_field(
         name="Economy",
-        value=(
-            "`!balance`\n"
-            "`!daily`"
-        ),
+        value="`!balance`\n`!daily`",
         inline=False
     )
 
     embed.add_field(
         name="Voice / Music",
-        value=(
-            "`!join`\n"
-            "`!leave`\n"
-            "`!play <soundcloud link or song>`\n"
-            "`!pause`\n"
-            "`!resume`\n"
-            "`!skip`\n"
-            "`!stop`\n"
-            "`!nowplaying`"
-        ),
+        value="`!join`\n`!leave`\n`!play <soundcloud link or song>`\n`!pause`\n`!resume`\n`!skip`\n`!stop`\n`!nowplaying`",
         inline=False
     )
 
     embed.add_field(
         name="Moderation",
-        value=(
-            "`!ban`\n"
-            "`!kick`\n"
-            "`!purge`"
-        ),
+        value="`!ban`\n`!kick`\n`!purge`",
         inline=False
     )
 
@@ -462,10 +422,7 @@ async def play_next_song(guild: discord.Guild):
         if error:
             print(f"Playback error: {error}")
 
-        future = asyncio.run_coroutine_threadsafe(
-            play_next_song(guild),
-            bot.loop
-        )
+        future = asyncio.run_coroutine_threadsafe(play_next_song(guild), bot.loop)
         try:
             future.result()
         except Exception as exc:
@@ -699,10 +656,7 @@ async def avatar_command(ctx, member: discord.Member = None):
 
 @bot.command(name="ask")
 async def ask_command(ctx, *, question: str):
-    await ctx.send(
-        f"🤖 AI system not connected yet.\n"
-        f"You asked: `{question}`"
-    )
+    await ctx.send(f"🤖 AI system not connected yet.\nYou asked: `{question}`")
 
 
 @bot.command(name="roast")
@@ -765,10 +719,7 @@ async def roll_command(ctx, dice: str = "1d6"):
 
     rolls = [random.randint(1, sides) for _ in range(count)]
     total = sum(rolls)
-    await ctx.send(
-        f"🎲 Rolled **{count}d{sides}**: {', '.join(map(str, rolls))}\n"
-        f"**Total:** {total}"
-    )
+    await ctx.send(f"🎲 Rolled **{count}d{sides}**: {', '.join(map(str, rolls))}\n**Total:** {total}")
 
 
 @bot.command(name="balance")
