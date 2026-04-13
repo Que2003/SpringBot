@@ -78,288 +78,6 @@ EIGHT_BALL_ANSWERS = [
     "Not looking good.",
 ]
 
-COMMAND_CATEGORIES = {
-    "Core / Help": [
-        ("help", "Show the main help menu"),
-        ("springhelp", "Show the SpringBot help menu"),
-        ("about", "Show what SpringBot does"),
-        ("invite", "Show the bot invite link"),
-        ("support", "Show support information"),
-        ("prefix", "Show the current prefix"),
-    ],
-    "Welcome / Server": [
-        ("welcome", "Show or set the welcome channel"),
-        ("goodbye", "Show or set the goodbye channel"),
-        ("setwelcome", "Set the welcome channel"),
-        ("setgoodbye", "Set the goodbye channel"),
-        ("testwelcome", "Test the welcome message"),
-        ("testgoodbye", "Test the goodbye message"),
-        ("autorole", "Set an auto-role for new members"),
-        ("reactionroles", "Manage reaction roles"),
-        ("rules", "Show server rules"),
-        ("serverrules", "Show server rules"),
-        ("announce", "Send an announcement"),
-        ("suggest", "Send a suggestion"),
-        ("poll", "Create a poll"),
-        ("giveaway", "Start a giveaway"),
-    ],
-    "Moderation": [
-        ("ban", "Ban a member"),
-        ("unban", "Unban a member"),
-        ("kick", "Kick a member"),
-        ("timeout", "Timeout a member"),
-        ("untimeout", "Remove timeout from a member"),
-        ("mute", "Mute a member"),
-        ("unmute", "Unmute a member"),
-        ("warn", "Warn a member"),
-        ("warnings", "View warnings"),
-        ("clearwarns", "Clear a member's warnings"),
-        ("purge", "Delete messages"),
-        ("slowmode", "Set slowmode"),
-        ("lock", "Lock a channel"),
-        ("unlock", "Unlock a channel"),
-        ("nick", "Change a nickname"),
-        ("role", "Add a role"),
-        ("removerole", "Remove a role"),
-        ("modlogs", "Show moderation logs"),
-    ],
-    "Utility": [
-        ("ping", "Check bot latency"),
-        ("uptime", "Show bot uptime"),
-        ("userinfo", "Show user information"),
-        ("serverinfo", "Show server information"),
-        ("membercount", "Show member count"),
-        ("avatar", "Show a user's avatar"),
-        ("banner", "Show a user's banner"),
-        ("afk", "Set AFK status"),
-        ("remind", "Create a reminder"),
-        ("timezone", "Show or set timezone"),
-        ("time", "Show time"),
-        ("weather", "Show weather"),
-        ("translate", "Translate text"),
-        ("define", "Define a word"),
-        ("calculate", "Calculate something"),
-        ("qr", "Create a QR code"),
-        ("shorten", "Shorten a link"),
-    ],
-    "Fun": [
-        ("roast", "Roast someone"),
-        ("compliment", "Compliment someone"),
-        ("joke", "Tell a joke"),
-        ("meme", "Get a meme"),
-        ("gif", "Get a gif"),
-        ("8ball", "Ask the magic 8-ball"),
-        ("coinflip", "Flip a coin"),
-        ("roll", "Roll dice"),
-        ("rate", "Rate something"),
-        ("ship", "Ship two people"),
-        ("wyr", "Would you rather"),
-        ("truth", "Truth question"),
-        ("dare", "Dare challenge"),
-        ("trivia", "Trivia question"),
-        ("fact", "Random fact"),
-    ],
-    "Social / Interaction": [
-        ("hug", "Hug someone"),
-        ("pat", "Pat someone"),
-        ("slap", "Slap someone"),
-        ("poke", "Poke someone"),
-        ("wave", "Wave at someone"),
-        ("highfive", "High five someone"),
-        ("kiss", "Kiss someone"),
-        ("cry", "Show sadness"),
-        ("laugh", "Laugh"),
-        ("angry", "Show anger"),
-    ],
-    "Music": [
-        ("join", "Join your voice channel"),
-        ("leave", "Leave the voice channel"),
-        ("play", "Play music"),
-        ("pause", "Pause music"),
-        ("resume", "Resume music"),
-        ("skip", "Skip track"),
-        ("stop", "Stop music"),
-        ("queue", "Show queue"),
-        ("nowplaying", "Show current song"),
-        ("loop", "Loop track"),
-        ("shuffle", "Shuffle queue"),
-        ("remove", "Remove a song from queue"),
-        ("seek", "Seek in a track"),
-        ("volume", "Set volume"),
-        ("lyrics", "Show lyrics"),
-        ("replay", "Replay current song"),
-        ("247", "Keep SpringBot in VC"),
-    ],
-    "Economy": [
-        ("balance", "Show balance"),
-        ("daily", "Claim daily reward"),
-        ("weekly", "Claim weekly reward"),
-        ("work", "Work for coins"),
-        ("beg", "Beg for coins"),
-        ("crime", "Risk coins"),
-        ("rob", "Rob another member"),
-        ("deposit", "Deposit coins"),
-        ("withdraw", "Withdraw coins"),
-        ("pay", "Pay another member"),
-        ("shop", "Open the shop"),
-        ("buy", "Buy an item"),
-        ("sell", "Sell an item"),
-        ("inventory", "View inventory"),
-        ("leaderboard", "Economy leaderboard"),
-        ("profile", "View profile"),
-    ],
-    "Casino / Games": [
-        ("slots", "Play slots"),
-        ("blackjack", "Play blackjack"),
-        ("roulette", "Play roulette"),
-        ("gamble", "Gamble coins"),
-        ("bet", "Place a bet"),
-        ("rps", "Rock paper scissors"),
-        ("tictactoe", "Play tic tac toe"),
-        ("connect4", "Play connect 4"),
-        ("hangman", "Play hangman"),
-        ("guess", "Guessing game"),
-        ("mines", "Play mines"),
-        ("dice", "Roll dice"),
-    ],
-    "Leveling": [
-        ("rank", "Show rank"),
-        ("level", "Show level"),
-        ("leaderboardxp", "XP leaderboard"),
-        ("setlevelrole", "Set role rewards"),
-        ("removelevelrole", "Remove level role"),
-        ("xpboost", "Boost XP"),
-    ],
-    "AI / Smart": [
-        ("ask", "Ask SpringBot anything"),
-        ("springai", "SpringBot AI command"),
-        ("explain", "Explain a topic"),
-        ("summarize", "Summarize text"),
-        ("rewrite", "Rewrite text"),
-        ("factcheck", "Fact-check something"),
-        ("idea", "Generate ideas"),
-        ("brainstorm", "Brainstorm ideas"),
-        ("techhelp", "Tech support help"),
-        ("codehelp", "Coding help"),
-        ("historyhelp", "History help"),
-        ("sciencehelp", "Science help"),
-        ("mathhelp", "Math help"),
-        ("bookhelp", "Book help"),
-        ("moviehelp", "Movie help"),
-        ("religionhelp", "Religion help"),
-        ("news", "Latest news"),
-    ],
-    "Study": [
-        ("study", "Study help"),
-        ("quizme", "Quiz generator"),
-        ("flashcards", "Flashcards"),
-        ("notes", "Study notes"),
-        ("topic", "Explain a topic"),
-        ("examhelp", "Exam help"),
-        ("question", "Answer a question"),
-        ("studyplan", "Create a study plan"),
-        ("term", "Define a term"),
-        ("practice", "Practice questions"),
-        ("revision", "Review material"),
-        ("essayhelp", "Essay help"),
-    ],
-    "Health / Wellness": [
-        ("mood", "Mood check"),
-        ("breathe", "Breathing exercise"),
-        ("hydrate", "Water reminder"),
-        ("sleep", "Sleep tips"),
-        ("motivate", "Motivation"),
-        ("affirmation", "Positive affirmation"),
-        ("journal", "Journal prompt"),
-        ("checkin", "Daily check-in"),
-        ("break", "Take a break"),
-        ("focus", "Focus mode"),
-        ("calm", "Calm down help"),
-        ("vent", "Vent command"),
-    ],
-    "Media / Content": [
-        ("quote", "Generate a quote"),
-        ("caption", "Caption ideas"),
-        ("clipidea", "Clip idea generator"),
-        ("storyidea", "Story idea generator"),
-        ("prompt", "Prompt generator"),
-        ("thumbnailidea", "Thumbnail idea"),
-        ("bio", "Bio generator"),
-        ("tagline", "Tagline generator"),
-        ("aesthetic", "Aesthetic ideas"),
-        ("intro", "Intro text generator"),
-    ],
-    "Admin / Owner": [
-        ("setstatus", "Set bot status"),
-        ("addroast", "Add roast line"),
-        ("addwelcome", "Add welcome line"),
-        ("addgoodbye", "Add goodbye line"),
-        ("reload", "Reload bot parts"),
-        ("sync", "Sync commands"),
-        ("blacklist", "Blacklist a user"),
-        ("whitelist", "Whitelist a user"),
-        ("disablecommand", "Disable a command"),
-        ("enablecommand", "Enable a command"),
-        ("setlogchannel", "Set log channel"),
-        ("setmodrole", "Set mod role"),
-        ("setdjrole", "Set DJ role"),
-        ("shutdown", "Shut down the bot"),
-    ],
-}
-
-REAL_COMMANDS = {
-    "help",
-    "springhelp",
-    "about",
-    "support",
-    "prefix",
-    "ping",
-    "rules",
-    "serverrules",
-    "welcome",
-    "goodbye",
-    "setwelcome",
-    "setgoodbye",
-    "testwelcome",
-    "testgoodbye",
-    "userinfo",
-    "serverinfo",
-    "membercount",
-    "avatar",
-    "ask",
-    "roast",
-    "8ball",
-    "coinflip",
-    "roll",
-    "ban",
-    "kick",
-    "purge",
-    "balance",
-    "daily",
-    "join",
-    "leave",
-    "addwelcome",
-    "addgoodbye",
-    "addroast",
-}
-
-MOD_ONLY = {
-    "ban", "unban", "kick", "timeout", "untimeout", "mute", "unmute",
-    "warn", "warnings", "clearwarns", "purge", "slowmode", "lock",
-    "unlock", "nick", "role", "removerole", "modlogs", "announce",
-    "poll", "giveaway"
-}
-
-ADMIN_ONLY = {
-    "welcome", "goodbye", "setwelcome", "setgoodbye", "autorole", "reactionroles"
-}
-
-OWNER_ONLY = {
-    "setstatus", "addroast", "addwelcome", "addgoodbye", "reload", "sync",
-    "blacklist", "whitelist", "disablecommand", "enablecommand",
-    "setlogchannel", "setmodrole", "setdjrole", "shutdown"
-}
-
 START_TIME = datetime.now(timezone.utc)
 
 
@@ -370,8 +88,7 @@ def load_json_file(path: Path, default_data: dict) -> dict:
 
     try:
         with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data
+            return json.load(f)
     except Exception:
         return json.loads(json.dumps(default_data))
 
@@ -420,57 +137,9 @@ def get_user_record(user_id: int) -> dict:
     if user_key not in users:
         users[user_key] = {
             "wallet": 0,
-            "last_daily": None
+            "last_daily": None,
         }
     return users[user_key]
-
-
-def get_category_embed(category_name: str) -> discord.Embed:
-    commands_list = COMMAND_CATEGORIES[category_name]
-    embed = discord.Embed(
-        title=f"🌸 {category_name}",
-        description=f"Use `{PREFIX}help` to return to the main menu.",
-        color=discord.Color.green()
-    )
-
-    lines = [f"`{PREFIX}{name}` — {desc}" for name, desc in commands_list]
-    embed.description += "\n\n" + "\n".join(lines)
-    return embed
-
-
-def get_main_help_embed() -> discord.Embed:
-    embed = discord.Embed(
-        title="🌸 SpringBot Command Menu",
-        description=(
-            f"Prefix: `{PREFIX}`\n"
-            f"Use `{PREFIX}help <category>` to open a category.\n"
-            "Example: `!help moderation`"
-        ),
-        color=discord.Color.green()
-    )
-
-    for category_name, commands_list in COMMAND_CATEGORIES.items():
-        preview = ", ".join(f"`{PREFIX}{cmd}`" for cmd, _ in commands_list[:5])
-        more_count = max(len(commands_list) - 5, 0)
-        if more_count:
-            preview += f" + {more_count} more"
-        embed.add_field(name=category_name, value=preview, inline=False)
-
-    return embed
-
-
-def find_category(name: str):
-    name = name.strip().lower()
-    exact = {cat.lower(): cat for cat in COMMAND_CATEGORIES}
-
-    if name in exact:
-        return exact[name]
-
-    for category in COMMAND_CATEGORIES:
-        if name in category.lower():
-            return category
-
-    return None
 
 
 def get_welcome_channel(guild: discord.Guild):
@@ -494,6 +163,98 @@ def format_uptime() -> str:
     hours, rem = divmod(rem, 3600)
     minutes, seconds = divmod(rem, 60)
     return f"{days}d {hours}h {minutes}m {seconds}s"
+
+
+def build_help_embed() -> discord.Embed:
+    embed = discord.Embed(
+        title="🌸 SpringBot Commands",
+        description="Only working commands are shown here.",
+        color=discord.Color.green()
+    )
+
+    embed.add_field(
+        name="Core",
+        value=(
+            "`!help`\n"
+            "`!about`\n"
+            "`!ping`\n"
+            "`!uptime`\n"
+            "`!prefix`"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="Server",
+        value=(
+            "`!rules`\n"
+            "`!welcome`\n"
+            "`!goodbye`\n"
+            "`!setwelcome`\n"
+            "`!setgoodbye`\n"
+            "`!testwelcome`\n"
+            "`!testgoodbye`"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="Utility",
+        value=(
+            "`!userinfo`\n"
+            "`!serverinfo`\n"
+            "`!membercount`\n"
+            "`!avatar`"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="Fun",
+        value=(
+            "`!roast`\n"
+            "`!8ball`\n"
+            "`!coinflip`\n"
+            "`!roll`"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="Economy",
+        value=(
+            "`!balance`\n"
+            "`!daily`"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="Voice",
+        value=(
+            "`!join`\n"
+            "`!leave`"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="Moderation",
+        value=(
+            "`!ban`\n"
+            "`!kick`\n"
+            "`!purge`"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="AI",
+        value="`!ask`",
+        inline=False
+    )
+
+    return embed
 
 
 async def set_welcome_channel_logic(ctx, channel: discord.TextChannel) -> None:
@@ -537,22 +298,8 @@ async def on_member_remove(member: discord.Member):
 
 
 @bot.command(name="help")
-async def help_command(ctx, *, category: str = None):
-    if category is None:
-        await ctx.send(embed=get_main_help_embed())
-        return
-
-    matched = find_category(category)
-    if not matched:
-        await ctx.send(f"Category not found. Use `{PREFIX}help` to see all categories.")
-        return
-
-    await ctx.send(embed=get_category_embed(matched))
-
-
-@bot.command(name="springhelp")
-async def springhelp_command(ctx, *, category: str = None):
-    await ctx.invoke(bot.get_command("help"), category=category)
+async def help_command(ctx):
+    await ctx.send(embed=build_help_embed())
 
 
 @bot.command(name="about")
@@ -560,17 +307,12 @@ async def about_command(ctx):
     embed = discord.Embed(
         title="About SpringBot",
         description=(
-            "SpringBot is a multi-purpose Discord bot built for moderation, music, "
-            "fun, study help, wellness, economy, and smart assistant features."
+            "SpringBot is a multi-purpose Discord bot with moderation, "
+            "welcome/goodbye, utility, fun, economy, and voice join features."
         ),
         color=discord.Color.green()
     )
     await ctx.send(embed=embed)
-
-
-@bot.command(name="support")
-async def support_command(ctx):
-    await ctx.send("Use `!help` to see every category and command.")
 
 
 @bot.command(name="prefix")
@@ -584,7 +326,12 @@ async def ping_command(ctx):
     await ctx.send(f"🏓 Pong: `{latency}ms`")
 
 
-@bot.command(name="rules", aliases=["serverrules"])
+@bot.command(name="uptime")
+async def uptime_command(ctx):
+    await ctx.send(f"⏱️ Uptime: **{format_uptime()}**")
+
+
+@bot.command(name="rules")
 async def rules_command(ctx):
     rules_text = "\n".join([f"**{i + 1}.** {rule}" for i, rule in enumerate(SPRINGBOT_RULES)])
     embed = discord.Embed(
@@ -608,9 +355,7 @@ async def welcome_command(ctx, channel: discord.TextChannel = None):
     if current_channel:
         await ctx.send(f"🌸 Welcome channel is currently set to {current_channel.mention}")
     else:
-        await ctx.send(
-            f"No welcome channel is set yet. Use `{PREFIX}welcome #channel` or `{PREFIX}setwelcome #channel`."
-        )
+        await ctx.send(f"No welcome channel is set yet. Use `{PREFIX}welcome #channel`.")
 
 
 @bot.command(name="goodbye")
@@ -626,9 +371,7 @@ async def goodbye_command(ctx, channel: discord.TextChannel = None):
     if current_channel:
         await ctx.send(f"🍃 Goodbye channel is currently set to {current_channel.mention}")
     else:
-        await ctx.send(
-            f"No goodbye channel is set yet. Use `{PREFIX}goodbye #channel` or `{PREFIX}setgoodbye #channel`."
-        )
+        await ctx.send(f"No goodbye channel is set yet. Use `{PREFIX}goodbye #channel`.")
 
 
 @bot.command(name="setwelcome")
@@ -659,31 +402,6 @@ async def testgoodbye_command(ctx):
     messages = config.get("goodbye_messages", DEFAULT_GOODBYE_MESSAGES)
     message = random.choice(messages).format(member=ctx.author)
     await ctx.send(message)
-
-
-@bot.command(name="addwelcome")
-@commands.is_owner()
-async def addwelcome_command(ctx, *, message: str):
-    config.setdefault("welcome_messages", DEFAULT_WELCOME_MESSAGES.copy())
-    config["welcome_messages"].append(message)
-    save_config(config)
-    await ctx.send("✅ Added a new welcome message.")
-
-
-@bot.command(name="addgoodbye")
-@commands.is_owner()
-async def addgoodbye_command(ctx, *, message: str):
-    config.setdefault("goodbye_messages", DEFAULT_GOODBYE_MESSAGES.copy())
-    config["goodbye_messages"].append(message)
-    save_config(config)
-    await ctx.send("✅ Added a new goodbye message.")
-
-
-@bot.command(name="addroast")
-@commands.is_owner()
-async def addroast_command(ctx, *, message: str):
-    ROAST_LINES.append(message)
-    await ctx.send("✅ Added a new roast line for this session.")
 
 
 @bot.command(name="userinfo")
@@ -761,9 +479,8 @@ async def avatar_command(ctx, member: discord.Member = None):
 @bot.command(name="ask")
 async def ask_command(ctx, *, question: str):
     await ctx.send(
-        f"🤖 **SpringBot AI placeholder**\n"
-        f"You asked: `{question}`\n\n"
-        "This command is ready in the structure. Next step is wiring it to your AI/API system."
+        f"🤖 AI system not connected yet.\n"
+        f"You asked: `{question}`"
     )
 
 
@@ -971,39 +688,11 @@ async def purge_command(ctx, amount: int):
         return
 
     deleted = await ctx.channel.purge(limit=amount + 1)
-    confirmation = await ctx.send(f"🧹 Deleted **{len(deleted) - 1}** messages.", delete_after=5)
-
+    msg = await ctx.send(f"🧹 Deleted **{len(deleted) - 1}** messages.", delete_after=5)
     try:
-        await confirmation.delete(delay=5)
+        await msg.delete(delay=5)
     except discord.HTTPException:
         pass
-
-
-def make_stub_command(cmd_name: str, description: str):
-    async def _stub(ctx, *, args: str = None):
-        await ctx.send(
-            f"`{PREFIX}{cmd_name}` is in SpringBot's command menu.\n"
-            f"Description: {description}\n"
-            "Its full logic has not been built yet."
-        )
-
-    safe_name = re.sub(r"\W|^(?=\d)", "_", f"stub_{cmd_name}")
-    _stub.__name__ = safe_name
-
-    if cmd_name in OWNER_ONLY:
-        _stub = commands.is_owner()(_stub)
-    elif cmd_name in ADMIN_ONLY:
-        _stub = commands.has_permissions(administrator=True)(_stub)
-    elif cmd_name in MOD_ONLY:
-        _stub = commands.has_permissions(manage_messages=True)(_stub)
-
-    return commands.command(name=cmd_name, help=description)(_stub)
-
-
-for category_name, command_items in COMMAND_CATEGORIES.items():
-    for cmd_name, cmd_desc in command_items:
-        if cmd_name not in REAL_COMMANDS and bot.get_command(cmd_name) is None:
-            bot.add_command(make_stub_command(cmd_name, cmd_desc))
 
 
 @bot.event
@@ -1014,10 +703,6 @@ async def on_command_error(ctx, error):
 
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("You do not have permission to use that command.")
-        return
-
-    if isinstance(error, commands.NotOwner):
-        await ctx.send("Only the bot owner can use that command.")
         return
 
     if isinstance(error, commands.MissingRequiredArgument):
