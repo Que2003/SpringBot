@@ -577,9 +577,7 @@ async def daily_command(ctx):
             remaining = next_claim - now
             hours, rem = divmod(int(remaining.total_seconds()), 3600)
             minutes, _ = divmod(rem, 60)
-            await ctx.send(
-                f"⏳ You already claimed your daily. Try again in **{hours}h {minutes}m**."
-            )
+            await ctx.send(f"⏳ You already claimed your daily. Try again in **{hours}h {minutes}m**.")
             return
 
     reward = random.randint(100, 250)
@@ -602,7 +600,9 @@ async def join_command(ctx):
     voice_channel = ctx.author.voice.channel
     voice_client = ctx.guild.voice_client
 
-    permissions = voice_channel.permissions_for(ctx.guild.me)
+    me = ctx.guild.me or ctx.guild.get_member(bot.user.id)
+    permissions = voice_channel.permissions_for(me)
+
     if not permissions.connect:
         await ctx.send("I do not have permission to connect to that voice channel.")
         return
@@ -621,7 +621,7 @@ async def join_command(ctx):
             await ctx.send(f"Moved to **{voice_channel.name}**.")
             return
 
-        await voice_channel.connect(self_deaf=True)
+        await voice_channel.connect()
         await ctx.send(f"Joined **{voice_channel.name}**.")
     except discord.ClientException as e:
         await ctx.send(f"Voice error: {e}")
