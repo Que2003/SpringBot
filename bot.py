@@ -2,11 +2,18 @@ import os
 import json
 import random
 import re
+import asyncio
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
 import discord
 from discord.ext import commands
+
+try:
+    import yt_dlp
+except ImportError:
+    yt_dlp = None
 
 try:
     from dotenv import load_dotenv
@@ -17,6 +24,7 @@ except ImportError:
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = "!"
+FFMPEG_PATH = os.getenv("FFMPEG_PATH", "ffmpeg")
 
 CONFIG_FILE = Path("springbot_config.json")
 ECONOMY_FILE = Path("springbot_economy.json")
@@ -78,6 +86,25 @@ EIGHT_BALL_ANSWERS = [
     "Not looking good.",
 ]
 
+YTDL_FORMAT_OPTIONS = {
+    "format": "bestaudio/best",
+    "noplaylist": True,
+    "quiet": True,
+    "no_warnings": True,
+    "default_search": "ytsearch1",
+    "source_address": "0.0.0.0",
+    "extract_flat": False,
+}
+
+FFMPEG_OPTIONS = {
+    "before_options": (
+        "-reconnect 1 "
+        "-reconnect_streamed 1 "
+        "-reconnect_delay_max 5"
+    ),
+    "options": "-vn",
+}
+
 START_TIME = datetime.now(timezone.utc)
 
 
@@ -129,6 +156,23 @@ intents.members = True
 intents.voice_states = True
 
 bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None)
+
+
+class GuildMusicState:
+    def __init__(self):
+        self.queue = []
+        self.now_playing = None
+        self.text_channel_id = None
+        self.lock = asyncio.Lock()
+
+
+music_states = {}
+
+
+def get_music_state(guild_id: int) -> GuildMusicState:
+    if guild_id not in music_states:
+        music_states[guild_id] = GuildMusicState()
+    return music_states[guild_id]
 
 
 def get_user_record(user_id: int) -> dict:
@@ -230,10 +274,16 @@ def build_help_embed() -> discord.Embed:
     )
 
     embed.add_field(
-        name="Voice",
+        name="Voice / Music",
         value=(
             "`!join`\n"
-            "`!leave`"
+            "`!leave`\n"
+            "`!play <song or link>`\n"
+            "`!pause`\n"
+            "`!resume`\n"
+            "`!skip`\n"
+            "`!stop`\n"
+            "`!nowplaying`"
         ),
         inline=False
     )
@@ -267,6 +317,148 @@ async def set_goodbye_channel_logic(ctx, channel: discord.TextChannel) -> None:
     config["goodbye_channel"] = channel.id
     save_config(config)
     await ctx.send(f"✅ Goodbye channel set to {channel.mention}")
+
+
+def is_url(text: str) -> bool:
+    try:
+        parsed = urlparse(text)
+        return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+    except Exception:
+        return False
+
+
+async def join_author_voice_channel(ctx) -> discord.VoiceClient | None:
+    if not ctx.author.voice or not ctx.author.voice.channel:
+        await ctx.send("Join a voice channel first, then use this command.")
+        return None
+
+    voice_channel = ctx.author.voice.channel
+    voice_client = ctx.guild.voice_client
+
+    me = ctx.guild.me or ctx.guild.get_member(bot.user.id)
+    permissions = voice_channel.permissions_for(me)
+
+    if not permissions.connect:
+        await ctx.send("I do not have permission to connect to that voice channel.")
+        return None
+
+    if not permissions.speak:
+        await ctx.send("I do not have permission to speak in that voice channel.")
+        return None
+
+    try:
+        if voice_client and voice_client.is_connected():
+            if voice_client.channel != voice_channel:
+                await voice_client.move_to(voice_channel)
+            return voice_client
+
+        return await voice_channel.connect()
+    except discord.ClientException as e:
+        await ctx.send(f"Voice error: {e}")
+    except discord.Forbidden:
+        await ctx.send("Discord blocked the join because my permissions are missing.")
+    except Exception as e:
+        await ctx.send(f"Could not join voice: {e}")
+
+    return None
+
+
+async def extract_song_info(search: str) -> dict:
+    if yt_dlp is None:
+        raise RuntimeError("yt-dlp is not installed.")
+
+    loop = asyncio.get_running_loop()
+
+    def _extract():
+        with yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS) as ydl:
+            info = ydl.extract_info(search, download=False)
+            if info is None:
+                return None
+
+            if "entries" in info:
+                entries = info.get("entries") or []
+                if not entries:
+                    return None
+                info = entries[0]
+
+            if info is None:
+                return None
+
+            return {
+                "title": info.get("title", "Unknown title"),
+                "url": info.get("url"),
+                "webpage_url": info.get("webpage_url") or search,
+                "duration": info.get("duration"),
+                "uploader": info.get("uploader", "Unknown uploader"),
+                "thumbnail": info.get("thumbnail"),
+                "requested_by": None,
+            }
+
+    return await loop.run_in_executor(None, _extract)
+
+
+def format_duration(seconds: int | None) -> str:
+    if not seconds:
+        return "Unknown"
+    minutes, seconds = divmod(int(seconds), 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes}:{seconds:02d}"
+
+
+async def play_next_song(guild: discord.Guild):
+    state = get_music_state(guild.id)
+    voice_client = guild.voice_client
+
+    if not voice_client or not voice_client.is_connected():
+        state.now_playing = None
+        return
+
+    async with state.lock:
+        if not state.queue:
+            state.now_playing = None
+            return
+
+        song = state.queue.pop(0)
+        state.now_playing = song
+
+    source = discord.FFmpegPCMAudio(
+        song["url"],
+        executable=FFMPEG_PATH,
+        **FFMPEG_OPTIONS
+    )
+
+    def after_playing(error):
+        if error:
+            print(f"Playback error: {error}")
+
+        future = asyncio.run_coroutine_threadsafe(
+            play_next_song(guild),
+            bot.loop
+        )
+        try:
+            future.result()
+        except Exception as exc:
+            print(f"Queue advance error: {exc}")
+
+    voice_client.play(source, after=after_playing)
+
+    if state.text_channel_id:
+        text_channel = guild.get_channel(state.text_channel_id)
+        if text_channel:
+            embed = discord.Embed(
+                title="🎶 Now Playing",
+                description=f"**{song['title']}**",
+                color=discord.Color.green()
+            )
+            embed.add_field(name="Duration", value=format_duration(song.get("duration")), inline=True)
+            embed.add_field(name="Uploader", value=song.get("uploader", "Unknown"), inline=True)
+            embed.add_field(name="Requested By", value=song["requested_by"].mention, inline=True)
+            embed.add_field(name="Link", value=song.get("webpage_url", "N/A"), inline=False)
+            if song.get("thumbnail"):
+                embed.set_thumbnail(url=song["thumbnail"])
+            await text_channel.send(embed=embed)
 
 
 @bot.event
@@ -308,7 +500,7 @@ async def about_command(ctx):
         title="About SpringBot",
         description=(
             "SpringBot is a multi-purpose Discord bot with moderation, "
-            "welcome/goodbye, utility, fun, economy, and voice join features."
+            "welcome/goodbye, utility, fun, economy, and music features."
         ),
         color=discord.Color.green()
     )
@@ -593,42 +785,9 @@ async def daily_command(ctx):
 
 @bot.command(name="join")
 async def join_command(ctx):
-    if not ctx.author.voice or not ctx.author.voice.channel:
-        await ctx.send("Join a voice channel first, then use `!join`.")
-        return
-
-    voice_channel = ctx.author.voice.channel
-    voice_client = ctx.guild.voice_client
-
-    me = ctx.guild.me or ctx.guild.get_member(bot.user.id)
-    permissions = voice_channel.permissions_for(me)
-
-    if not permissions.connect:
-        await ctx.send("I do not have permission to connect to that voice channel.")
-        return
-
-    if not permissions.speak:
-        await ctx.send("I do not have permission to speak in that voice channel.")
-        return
-
-    try:
-        if voice_client and voice_client.is_connected():
-            if voice_client.channel == voice_channel:
-                await ctx.send(f"Already in **{voice_channel.name}**.")
-                return
-
-            await voice_client.move_to(voice_channel)
-            await ctx.send(f"Moved to **{voice_channel.name}**.")
-            return
-
-        await voice_channel.connect()
-        await ctx.send(f"Joined **{voice_channel.name}**.")
-    except discord.ClientException as e:
-        await ctx.send(f"Voice error: {e}")
-    except discord.Forbidden:
-        await ctx.send("Discord blocked the join because my permissions are missing.")
-    except Exception as e:
-        await ctx.send(f"Could not join voice: {e}")
+    voice_client = await join_author_voice_channel(ctx)
+    if voice_client:
+        await ctx.send(f"Joined **{voice_client.channel.name}**.")
 
 
 @bot.command(name="leave")
@@ -639,9 +798,141 @@ async def leave_command(ctx):
         await ctx.send("I am not in a voice channel.")
         return
 
+    state = get_music_state(ctx.guild.id)
+    state.queue.clear()
+    state.now_playing = None
+
     channel_name = voice_client.channel.name
     await voice_client.disconnect()
     await ctx.send(f"Left **{channel_name}**.")
+
+
+@bot.command(name="play")
+async def play_command(ctx, *, query: str):
+    if yt_dlp is None:
+        await ctx.send("yt-dlp is not installed. Add it to your requirements and redeploy.")
+        return
+
+    voice_client = await join_author_voice_channel(ctx)
+    if not voice_client:
+        return
+
+    state = get_music_state(ctx.guild.id)
+    state.text_channel_id = ctx.channel.id
+
+    async with ctx.typing():
+        try:
+            song = await extract_song_info(query)
+        except Exception as e:
+            await ctx.send(f"Could not load that track: {e}")
+            return
+
+    if not song or not song.get("url"):
+        await ctx.send("I could not find a playable audio source for that search.")
+        return
+
+    song["requested_by"] = ctx.author
+
+    if voice_client.is_playing() or voice_client.is_paused() or state.now_playing:
+        state.queue.append(song)
+        await ctx.send(
+            f"➕ Added to queue: **{song['title']}**\n"
+            f"Requested by: {ctx.author.mention}"
+        )
+        return
+
+    state.queue.append(song)
+    await ctx.send(f"🔎 Loaded: **{song['title']}**")
+    await play_next_song(ctx.guild)
+
+
+@bot.command(name="pause")
+async def pause_command(ctx):
+    voice_client = ctx.guild.voice_client
+
+    if not voice_client or not voice_client.is_connected():
+        await ctx.send("I am not in a voice channel.")
+        return
+
+    if not voice_client.is_playing():
+        await ctx.send("Nothing is currently playing.")
+        return
+
+    voice_client.pause()
+    await ctx.send("⏸️ Paused.")
+
+
+@bot.command(name="resume")
+async def resume_command(ctx):
+    voice_client = ctx.guild.voice_client
+
+    if not voice_client or not voice_client.is_connected():
+        await ctx.send("I am not in a voice channel.")
+        return
+
+    if not voice_client.is_paused():
+        await ctx.send("Nothing is paused right now.")
+        return
+
+    voice_client.resume()
+    await ctx.send("▶️ Resumed.")
+
+
+@bot.command(name="skip")
+async def skip_command(ctx):
+    voice_client = ctx.guild.voice_client
+
+    if not voice_client or not voice_client.is_connected():
+        await ctx.send("I am not in a voice channel.")
+        return
+
+    if not voice_client.is_playing() and not voice_client.is_paused():
+        await ctx.send("Nothing is currently playing.")
+        return
+
+    voice_client.stop()
+    await ctx.send("⏭️ Skipped.")
+
+
+@bot.command(name="stop")
+async def stop_command(ctx):
+    voice_client = ctx.guild.voice_client
+
+    if not voice_client or not voice_client.is_connected():
+        await ctx.send("I am not in a voice channel.")
+        return
+
+    state = get_music_state(ctx.guild.id)
+    state.queue.clear()
+    state.now_playing = None
+
+    if voice_client.is_playing() or voice_client.is_paused():
+        voice_client.stop()
+
+    await ctx.send("⏹️ Stopped playback and cleared the queue.")
+
+
+@bot.command(name="nowplaying")
+async def nowplaying_command(ctx):
+    state = get_music_state(ctx.guild.id)
+    song = state.now_playing
+
+    if not song:
+        await ctx.send("Nothing is playing right now.")
+        return
+
+    embed = discord.Embed(
+        title="🎶 Now Playing",
+        description=f"**{song['title']}**",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="Duration", value=format_duration(song.get("duration")), inline=True)
+    embed.add_field(name="Uploader", value=song.get("uploader", "Unknown"), inline=True)
+    embed.add_field(name="Requested By", value=song["requested_by"].mention, inline=True)
+    embed.add_field(name="Link", value=song.get("webpage_url", "N/A"), inline=False)
+    if song.get("thumbnail"):
+        embed.set_thumbnail(url=song["thumbnail"])
+    await ctx.send(embed=embed)
 
 
 @bot.command(name="ban")
