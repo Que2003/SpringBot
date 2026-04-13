@@ -5,3 +5,4 @@ davey
 feedparser
 edge-tts
 discord-ext-voice-recv
+PyNaC1
