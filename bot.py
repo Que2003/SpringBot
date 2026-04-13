@@ -91,7 +91,6 @@ YTDL_FORMAT_OPTIONS = {
     "noplaylist": True,
     "quiet": True,
     "no_warnings": True,
-    "default_search": "ytsearch1",
     "source_address": "0.0.0.0",
     "extract_flat": False,
 }
@@ -278,7 +277,7 @@ def build_help_embed() -> discord.Embed:
         value=(
             "`!join`\n"
             "`!leave`\n"
-            "`!play <song or link>`\n"
+            "`!play <soundcloud link or song>`\n"
             "`!pause`\n"
             "`!resume`\n"
             "`!skip`\n"
@@ -327,6 +326,15 @@ def is_url(text: str) -> bool:
         return False
 
 
+def is_soundcloud_url(text: str) -> bool:
+    try:
+        parsed = urlparse(text)
+        host = parsed.netloc.lower()
+        return "soundcloud.com" in host or "snd.sc" in host
+    except Exception:
+        return False
+
+
 async def join_author_voice_channel(ctx) -> discord.VoiceClient | None:
     if not ctx.author.voice or not ctx.author.voice.channel:
         await ctx.send("Join a voice channel first, then use this command.")
@@ -363,7 +371,7 @@ async def join_author_voice_channel(ctx) -> discord.VoiceClient | None:
     return None
 
 
-async def extract_song_info(search: str) -> dict:
+async def extract_soundcloud_song_info(search: str) -> dict:
     if yt_dlp is None:
         raise RuntimeError("yt-dlp is not installed.")
 
@@ -371,7 +379,15 @@ async def extract_song_info(search: str) -> dict:
 
     def _extract():
         with yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS) as ydl:
-            info = ydl.extract_info(search, download=False)
+            target = search.strip()
+
+            if is_url(target):
+                if not is_soundcloud_url(target):
+                    raise RuntimeError("Only SoundCloud links are allowed.")
+                info = ydl.extract_info(target, download=False)
+            else:
+                info = ydl.extract_info(f"scsearch1:{target}", download=False)
+
             if info is None:
                 return None
 
@@ -384,10 +400,23 @@ async def extract_song_info(search: str) -> dict:
             if info is None:
                 return None
 
+            webpage_url = info.get("webpage_url") or ""
+            extractor = str(info.get("extractor", "")).lower()
+            extractor_key = str(info.get("extractor_key", "")).lower()
+
+            valid_sc = (
+                "soundcloud" in extractor
+                or "soundcloud" in extractor_key
+                or is_soundcloud_url(webpage_url)
+            )
+
+            if not valid_sc:
+                raise RuntimeError("Search did not return a SoundCloud result.")
+
             return {
                 "title": info.get("title", "Unknown title"),
                 "url": info.get("url"),
-                "webpage_url": info.get("webpage_url") or search,
+                "webpage_url": webpage_url,
                 "duration": info.get("duration"),
                 "uploader": info.get("uploader", "Unknown uploader"),
                 "thumbnail": info.get("thumbnail"),
@@ -500,7 +529,7 @@ async def about_command(ctx):
         title="About SpringBot",
         description=(
             "SpringBot is a multi-purpose Discord bot with moderation, "
-            "welcome/goodbye, utility, fun, economy, and music features."
+            "welcome/goodbye, utility, fun, economy, and SoundCloud music features."
         ),
         color=discord.Color.green()
     )
@@ -822,13 +851,13 @@ async def play_command(ctx, *, query: str):
 
     async with ctx.typing():
         try:
-            song = await extract_song_info(query)
+            song = await extract_soundcloud_song_info(query)
         except Exception as e:
-            await ctx.send(f"Could not load that track: {e}")
+            await ctx.send(f"Could not load that SoundCloud track: {e}")
             return
 
     if not song or not song.get("url"):
-        await ctx.send("I could not find a playable audio source for that search.")
+        await ctx.send("I could not find a playable SoundCloud audio source.")
         return
 
     song["requested_by"] = ctx.author
@@ -842,7 +871,7 @@ async def play_command(ctx, *, query: str):
         return
 
     state.queue.append(song)
-    await ctx.send(f"🔎 Loaded: **{song['title']}**")
+    await ctx.send(f"🔎 Loaded from SoundCloud: **{song['title']}**")
     await play_next_song(ctx.guild)
 
 
