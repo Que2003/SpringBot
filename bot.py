@@ -21,7 +21,7 @@ try:
 except ImportError:
     pass
 
-print("SPRINGBOT SAFE BUILD ACTIVE")
+print("SPRINGBOT ADVANCED BUILD ACTIVE")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = "!"
@@ -29,6 +29,7 @@ FFMPEG_PATH = os.getenv("FFMPEG_PATH", "ffmpeg")
 
 CONFIG_FILE = Path("springbot_config.json")
 ECONOMY_FILE = Path("springbot_economy.json")
+MOD_FILE = Path("springbot_mod.json")
 
 DEFAULT_WELCOME_MESSAGES = [
     "🌸 Welcome to the server, {member.mention}! SpringBot is glad you're here.",
@@ -49,10 +50,16 @@ DEFAULT_CONFIG = {
     "goodbye_channel": None,
     "welcome_messages": DEFAULT_WELCOME_MESSAGES,
     "goodbye_messages": DEFAULT_GOODBYE_MESSAGES,
+    "autorole_id": None,
+    "reaction_roles": []
 }
 
 DEFAULT_ECONOMY = {
     "users": {}
+}
+
+DEFAULT_MOD = {
+    "warnings": {}
 }
 
 SPRINGBOT_RULES = [
@@ -124,27 +131,34 @@ def load_config() -> dict:
     return data
 
 
-def save_config(data: dict) -> None:
-    save_json_file(CONFIG_FILE, data)
-
-
 def load_economy() -> dict:
     data = load_json_file(ECONOMY_FILE, DEFAULT_ECONOMY)
     data.setdefault("users", {})
     return data
 
 
-def save_economy(data: dict) -> None:
-    save_json_file(ECONOMY_FILE, data)
+def load_mod_data() -> dict:
+    data = load_json_file(MOD_FILE, DEFAULT_MOD)
+    data.setdefault("warnings", {})
+    return data
+
+
+def save_all() -> None:
+    save_json_file(CONFIG_FILE, config)
+    save_json_file(ECONOMY_FILE, economy)
+    save_json_file(MOD_FILE, mod_data)
 
 
 config = load_config()
 economy = load_economy()
+mod_data = load_mod_data()
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 intents.voice_states = True
+intents.guilds = True
+intents.reactions = True
 
 bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None)
 
@@ -155,6 +169,7 @@ class GuildMusicState:
         self.now_playing = None
         self.text_channel_id = None
         self.lock = asyncio.Lock()
+        self.loop_enabled = False
 
 
 music_states = {}
@@ -177,6 +192,17 @@ def get_user_record(user_id: int) -> dict:
     return users[user_key]
 
 
+def get_warning_key(guild_id: int, user_id: int) -> str:
+    return f"{guild_id}:{user_id}"
+
+
+def get_warnings(guild_id: int, user_id: int) -> list:
+    warnings = mod_data.setdefault("warnings", {})
+    key = get_warning_key(guild_id, user_id)
+    warnings.setdefault(key, [])
+    return warnings[key]
+
+
 def get_welcome_channel(guild: discord.Guild):
     channel_id = config.get("welcome_channel")
     return guild.get_channel(channel_id) if channel_id else None
@@ -185,6 +211,11 @@ def get_welcome_channel(guild: discord.Guild):
 def get_goodbye_channel(guild: discord.Guild):
     channel_id = config.get("goodbye_channel")
     return guild.get_channel(channel_id) if channel_id else None
+
+
+def get_autorole(guild: discord.Guild):
+    role_id = config.get("autorole_id")
+    return guild.get_role(role_id) if role_id else None
 
 
 def format_uptime() -> str:
@@ -211,7 +242,7 @@ def build_help_embed() -> discord.Embed:
 
     embed.add_field(
         name="Server",
-        value="`!rules`\n`!welcome`\n`!goodbye`\n`!setwelcome`\n`!setgoodbye`\n`!testwelcome`\n`!testgoodbye`",
+        value="`!rules`\n`!welcome`\n`!goodbye`\n`!setwelcome`\n`!setgoodbye`\n`!testwelcome`\n`!testgoodbye`\n`!autorole`\n`!reactionrole`",
         inline=False
     )
 
@@ -235,13 +266,13 @@ def build_help_embed() -> discord.Embed:
 
     embed.add_field(
         name="Voice / Music",
-        value="`!join`\n`!leave`\n`!play <soundcloud link or song>`\n`!pause`\n`!resume`\n`!skip`\n`!stop`\n`!nowplaying`",
+        value="`!join`\n`!leave`\n`!play <soundcloud link or song>`\n`!pause`\n`!resume`\n`!skip`\n`!stop`\n`!queue`\n`!shuffle`\n`!loop`\n`!nowplaying`",
         inline=False
     )
 
     embed.add_field(
         name="Moderation",
-        value="`!ban`\n`!kick`\n`!purge`",
+        value="`!ban`\n`!kick`\n`!timeout`\n`!untimeout`\n`!warn`\n`!warnings`\n`!clearwarns`\n`!purge`\n`!slowmode`\n`!lock`\n`!unlock`",
         inline=False
     )
 
@@ -256,13 +287,13 @@ def build_help_embed() -> discord.Embed:
 
 async def set_welcome_channel_logic(ctx, channel: discord.TextChannel) -> None:
     config["welcome_channel"] = channel.id
-    save_config(config)
+    save_all()
     await ctx.send(f"✅ Welcome channel set to {channel.mention}")
 
 
 async def set_goodbye_channel_logic(ctx, channel: discord.TextChannel) -> None:
     config["goodbye_channel"] = channel.id
-    save_config(config)
+    save_all()
     await ctx.send(f"✅ Goodbye channel set to {channel.mention}")
 
 
@@ -280,6 +311,10 @@ def is_soundcloud_url(text: str) -> bool:
         return "soundcloud.com" in host or "snd.sc" in host
     except Exception:
         return False
+
+
+def normalize_emoji(emoji: str) -> str:
+    return emoji.strip()
 
 
 async def join_author_voice_channel(ctx) -> discord.VoiceClient | None:
@@ -379,11 +414,14 @@ async def play_next_song(guild: discord.Guild):
         return
 
     async with state.lock:
-        if not state.queue:
-            state.now_playing = None
-            return
-        song = state.queue.pop(0)
-        state.now_playing = song
+        if state.loop_enabled and state.now_playing:
+            song = state.now_playing
+        else:
+            if not state.queue:
+                state.now_playing = None
+                return
+            song = state.queue.pop(0)
+            state.now_playing = song
 
     source = discord.FFmpegPCMAudio(
         song["url"],
@@ -429,6 +467,13 @@ async def on_member_join(member: discord.Member):
         message = random.choice(config.get("welcome_messages", DEFAULT_WELCOME_MESSAGES)).format(member=member)
         await channel.send(message)
 
+    autorole = get_autorole(member.guild)
+    if autorole:
+        try:
+            await member.add_roles(autorole, reason="SpringBot autorole")
+        except discord.Forbidden:
+            pass
+
 
 @bot.event
 async def on_member_remove(member: discord.Member):
@@ -436,6 +481,58 @@ async def on_member_remove(member: discord.Member):
     if channel:
         message = random.choice(config.get("goodbye_messages", DEFAULT_GOODBYE_MESSAGES)).format(member=member)
         await channel.send(message)
+
+
+@bot.event
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+    if payload.guild_id is None or payload.user_id == bot.user.id:
+        return
+
+    guild = bot.get_guild(payload.guild_id)
+    if guild is None:
+        return
+
+    member = guild.get_member(payload.user_id)
+    if member is None or member.bot:
+        return
+
+    emoji_str = str(payload.emoji)
+
+    for entry in config.get("reaction_roles", []):
+        if entry["message_id"] == payload.message_id and entry["emoji"] == emoji_str:
+            role = guild.get_role(entry["role_id"])
+            if role:
+                try:
+                    await member.add_roles(role, reason="SpringBot reaction role")
+                except discord.Forbidden:
+                    pass
+            break
+
+
+@bot.event
+async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
+    if payload.guild_id is None:
+        return
+
+    guild = bot.get_guild(payload.guild_id)
+    if guild is None:
+        return
+
+    member = guild.get_member(payload.user_id)
+    if member is None or member.bot:
+        return
+
+    emoji_str = str(payload.emoji)
+
+    for entry in config.get("reaction_roles", []):
+        if entry["message_id"] == payload.message_id and entry["emoji"] == emoji_str:
+            role = guild.get_role(entry["role_id"])
+            if role:
+                try:
+                    await member.remove_roles(role, reason="SpringBot reaction role removal")
+                except discord.Forbidden:
+                    pass
+            break
 
 
 @bot.command(name="help")
@@ -447,7 +544,7 @@ async def help_command(ctx):
 async def about_command(ctx):
     embed = discord.Embed(
         title="About SpringBot",
-        description="SpringBot is a multi-purpose Discord bot with moderation, welcome/goodbye, utility, fun, economy, and SoundCloud music features.",
+        description="SpringBot is a multi-purpose Discord bot with moderation, welcome/goodbye, utility, fun, economy, SoundCloud music, reaction roles, and autoroles.",
         color=discord.Color.green()
     )
     await ctx.send(embed=embed)
@@ -528,319 +625,27 @@ async def testgoodbye_command(ctx):
     await ctx.send(message)
 
 
-@bot.command(name="userinfo")
-async def userinfo_command(ctx, member: discord.Member = None):
-    member = member or ctx.author
-    embed = discord.Embed(title=f"User Info - {member}", color=discord.Color.green())
-    embed.set_thumbnail(url=member.display_avatar.url)
-    embed.add_field(name="Username", value=str(member), inline=True)
-    embed.add_field(name="Display Name", value=member.display_name, inline=True)
-    embed.add_field(name="ID", value=member.id, inline=False)
-    embed.add_field(name="Joined Server", value=member.joined_at.strftime("%Y-%m-%d %H:%M:%S") if member.joined_at else "Unknown", inline=False)
-    embed.add_field(name="Account Created", value=member.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=False)
-    roles = [role.mention for role in member.roles if role.name != "@everyone"]
-    embed.add_field(name="Roles", value=", ".join(roles[:15]) if roles else "No roles", inline=False)
-    await ctx.send(embed=embed)
+@bot.command(name="autorole")
+@commands.has_permissions(administrator=True)
+async def autorole_command(ctx, *, role_name: str = None):
+    if role_name is None:
+        role = get_autorole(ctx.guild)
+        return await ctx.send(f"Autorole is set to **{role.name}**." if role else "No autorole is set.")
+
+    if role_name.lower() in {"off", "none", "disable"}:
+        config["autorole_id"] = None
+        save_all()
+        return await ctx.send("Autorole disabled.")
+
+    role = discord.utils.get(ctx.guild.roles, name=role_name)
+    if role is None:
+        return await ctx.send("Role not found.")
+
+    config["autorole_id"] = role.id
+    save_all()
+    await ctx.send(f"Autorole set to **{role.name}**.")
 
 
-@bot.command(name="serverinfo")
-async def serverinfo_command(ctx):
-    guild = ctx.guild
-    embed = discord.Embed(title=f"Server Info - {guild.name}", color=discord.Color.green())
-    if guild.icon:
-        embed.set_thumbnail(url=guild.icon.url)
-    embed.add_field(name="Server Name", value=guild.name, inline=True)
-    embed.add_field(name="Server ID", value=guild.id, inline=True)
-    embed.add_field(name="Owner", value=str(guild.owner), inline=False)
-    embed.add_field(name="Members", value=guild.member_count, inline=True)
-    embed.add_field(name="Roles", value=len(guild.roles), inline=True)
-    embed.add_field(name="Channels", value=len(guild.channels), inline=True)
-    embed.add_field(name="Created", value=guild.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=False)
-    await ctx.send(embed=embed)
-
-
-@bot.command(name="membercount")
-async def membercount_command(ctx):
-    await ctx.send(f"👥 Member count: **{ctx.guild.member_count}**")
-
-
-@bot.command(name="avatar")
-async def avatar_command(ctx, member: discord.Member = None):
-    member = member or ctx.author
-    embed = discord.Embed(title=f"{member.display_name}'s Avatar", color=discord.Color.green())
-    embed.set_image(url=member.display_avatar.url)
-    await ctx.send(embed=embed)
-
-
-@bot.command(name="ask")
-async def ask_command(ctx, *, question: str):
-    await ctx.send(f"🤖 AI system not connected yet.\nYou asked: `{question}`")
-
-
-@bot.command(name="roast")
-async def roast_command(ctx, member: discord.Member = None):
-    target = member or ctx.author
-    if target == bot.user:
-        await ctx.send("Nice try. I am not roasting myself.")
-        return
-    line = random.choice(ROAST_LINES).format(target=target)
-    await ctx.send(line)
-
-
-@bot.command(name="8ball")
-async def eightball_command(ctx, *, question: str):
-    answer = random.choice(EIGHT_BALL_ANSWERS)
-    embed = discord.Embed(title="🎱 Magic 8-Ball", color=discord.Color.green())
-    embed.add_field(name="Question", value=question, inline=False)
-    embed.add_field(name="Answer", value=answer, inline=False)
-    await ctx.send(embed=embed)
-
-
-@bot.command(name="coinflip")
-async def coinflip_command(ctx):
-    result = random.choice(["Heads", "Tails"])
-    await ctx.send(f"🪙 Coinflip result: **{result}**")
-
-
-@bot.command(name="roll")
-async def roll_command(ctx, dice: str = "1d6"):
-    dice = dice.lower().strip()
-    match = re.fullmatch(r"(\d+)d(\d+)", dice)
-    if not match:
-        await ctx.send("Use `!roll 1d6`, `!roll 2d20`, or `!roll 100`.")
-        return
-    count = int(match.group(1))
-    sides = int(match.group(2))
-    if count < 1 or count > 20 or sides < 2 or sides > 1000:
-        await ctx.send("Number of dice must be between 1 and 20 and sides between 2 and 1000.")
-        return
-    rolls = [random.randint(1, sides) for _ in range(count)]
-    total = sum(rolls)
-    await ctx.send(f"🎲 Rolled **{count}d{sides}**: {', '.join(map(str, rolls))}\n**Total:** {total}")
-
-
-@bot.command(name="balance")
-async def balance_command(ctx, member: discord.Member = None):
-    member = member or ctx.author
-    user_record = get_user_record(member.id)
-    save_economy(economy)
-    embed = discord.Embed(
-        title="💰 Balance",
-        description=f"{member.mention} has **{user_record['wallet']} SpringCoins**.",
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
-
-
-@bot.command(name="daily")
-async def daily_command(ctx):
-    user_record = get_user_record(ctx.author.id)
-    now = datetime.now(timezone.utc)
-    last_daily_str = user_record.get("last_daily")
-
-    if last_daily_str:
-        last_daily = datetime.fromisoformat(last_daily_str)
-        next_claim = last_daily + timedelta(hours=24)
-        if now < next_claim:
-            remaining = next_claim - now
-            hours, rem = divmod(int(remaining.total_seconds()), 3600)
-            minutes, _ = divmod(rem, 60)
-            await ctx.send(f"⏳ You already claimed your daily. Try again in **{hours}h {minutes}m**.")
-            return
-
-    reward = random.randint(100, 250)
-    user_record["wallet"] += reward
-    user_record["last_daily"] = now.isoformat()
-    save_economy(economy)
-
-    await ctx.send(f"💸 {ctx.author.mention} claimed **{reward} SpringCoins**.\nNew balance: **{user_record['wallet']} SpringCoins**.")
-
-
-@bot.command(name="join")
-async def join_command(ctx):
-    voice_client = await join_author_voice_channel(ctx)
-    if voice_client:
-        await ctx.send(f"Joined **{voice_client.channel.name}**.")
-
-
-@bot.command(name="leave")
-async def leave_command(ctx):
-    voice_client = ctx.guild.voice_client
-    if not voice_client or not voice_client.is_connected():
-        await ctx.send("I am not in a voice channel.")
-        return
-    state = get_music_state(ctx.guild.id)
-    state.queue.clear()
-    state.now_playing = None
-    channel_name = voice_client.channel.name
-    await voice_client.disconnect()
-    await ctx.send(f"Left **{channel_name}**.")
-
-
-@bot.command(name="play")
-async def play_command(ctx, *, query: str):
-    if yt_dlp is None:
-        await ctx.send("yt-dlp is not installed. Add it to your requirements and redeploy.")
-        return
-
-    voice_client = await join_author_voice_channel(ctx)
-    if not voice_client:
-        return
-
-    state = get_music_state(ctx.guild.id)
-    state.text_channel_id = ctx.channel.id
-
-    async with ctx.typing():
-        try:
-            song = await extract_soundcloud_song_info(query)
-        except Exception as e:
-            await ctx.send(f"SOUNDCLOUD SAFE BUILD: {e}")
-            return
-
-    if not song or not song.get("url"):
-        await ctx.send("I could not find a playable SoundCloud audio source.")
-        return
-
-    song["requested_by"] = ctx.author
-
-    if voice_client.is_playing() or voice_client.is_paused() or state.now_playing:
-        state.queue.append(song)
-        await ctx.send(f"➕ Added to queue: **{song['title']}**\nRequested by: {ctx.author.mention}")
-        return
-
-    state.queue.append(song)
-    await ctx.send(f"🔎 Loaded from SoundCloud: **{song['title']}**")
-    await play_next_song(ctx.guild)
-
-
-@bot.command(name="pause")
-async def pause_command(ctx):
-    voice_client = ctx.guild.voice_client
-    if not voice_client or not voice_client.is_connected():
-        await ctx.send("I am not in a voice channel.")
-        return
-    if not voice_client.is_playing():
-        await ctx.send("Nothing is currently playing.")
-        return
-    voice_client.pause()
-    await ctx.send("⏸️ Paused.")
-
-
-@bot.command(name="resume")
-async def resume_command(ctx):
-    voice_client = ctx.guild.voice_client
-    if not voice_client or not voice_client.is_connected():
-        await ctx.send("I am not in a voice channel.")
-        return
-    if not voice_client.is_paused():
-        await ctx.send("Nothing is paused right now.")
-        return
-    voice_client.resume()
-    await ctx.send("▶️ Resumed.")
-
-
-@bot.command(name="skip")
-async def skip_command(ctx):
-    voice_client = ctx.guild.voice_client
-    if not voice_client or not voice_client.is_connected():
-        await ctx.send("I am not in a voice channel.")
-        return
-    if not voice_client.is_playing() and not voice_client.is_paused():
-        await ctx.send("Nothing is currently playing.")
-        return
-    voice_client.stop()
-    await ctx.send("⏭️ Skipped.")
-
-
-@bot.command(name="stop")
-async def stop_command(ctx):
-    voice_client = ctx.guild.voice_client
-    if not voice_client or not voice_client.is_connected():
-        await ctx.send("I am not in a voice channel.")
-        return
-    state = get_music_state(ctx.guild.id)
-    state.queue.clear()
-    state.now_playing = None
-    if voice_client.is_playing() or voice_client.is_paused():
-        voice_client.stop()
-    await ctx.send("⏹️ Stopped playback and cleared the queue.")
-
-
-@bot.command(name="nowplaying")
-async def nowplaying_command(ctx):
-    state = get_music_state(ctx.guild.id)
-    song = state.now_playing
-    if not song:
-        await ctx.send("Nothing is playing right now.")
-        return
-    embed = discord.Embed(title="🎶 Now Playing", description=f"**{song['title']}**", color=discord.Color.green())
-    embed.add_field(name="Duration", value=format_duration(song.get("duration")), inline=True)
-    embed.add_field(name="Uploader", value=song.get("uploader", "Unknown"), inline=True)
-    embed.add_field(name="Requested By", value=song["requested_by"].mention, inline=True)
-    embed.add_field(name="Link", value=song.get("webpage_url", "N/A"), inline=False)
-    if song.get("thumbnail"):
-        embed.set_thumbnail(url=song["thumbnail"])
-    await ctx.send(embed=embed)
-
-
-@bot.command(name="ban")
-@commands.has_permissions(ban_members=True)
-async def ban_command(ctx, member: discord.Member, *, reason: str = "No reason provided."):
-    if member == ctx.author or member == ctx.guild.owner:
-        await ctx.send("That action is blocked.")
-        return
-    try:
-        await member.ban(reason=f"{reason} | Banned by {ctx.author}")
-        await ctx.send(f"🔨 Banned **{member}** | Reason: {reason}")
-    except discord.Forbidden:
-        await ctx.send("I do not have permission to ban that member.")
-
-
-@bot.command(name="kick")
-@commands.has_permissions(kick_members=True)
-async def kick_command(ctx, member: discord.Member, *, reason: str = "No reason provided."):
-    if member == ctx.author or member == ctx.guild.owner:
-        await ctx.send("That action is blocked.")
-        return
-    try:
-        await member.kick(reason=f"{reason} | Kicked by {ctx.author}")
-        await ctx.send(f"👢 Kicked **{member}** | Reason: {reason}")
-    except discord.Forbidden:
-        await ctx.send("I do not have permission to kick that member.")
-
-
-@bot.command(name="purge")
-@commands.has_permissions(manage_messages=True)
-async def purge_command(ctx, amount: int):
-    if amount < 1 or amount > 200:
-        await ctx.send("Choose a number between 1 and 200.")
-        return
-    deleted = await ctx.channel.purge(limit=amount + 1)
-    msg = await ctx.send(f"🧹 Deleted **{len(deleted) - 1}** messages.", delete_after=5)
-    try:
-        await msg.delete(delay=5)
-    except discord.HTTPException:
-        pass
-
-
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        await ctx.send(f"Unknown command. Use `{PREFIX}help`.")
-        return
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.send("You do not have permission to use that command.")
-        return
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Missing arguments for that command.")
-        return
-    if isinstance(error, commands.BadArgument):
-        await ctx.send("Invalid argument for that command.")
-        return
-    raise error
-
-
-if not TOKEN:
-    raise ValueError("DISCORD_TOKEN is missing from your environment variables.")
-
-bot.run(TOKEN)
+@bot.command(name="reactionrole")
+@commands.has_permissions(administrator=True)
+async def reactionrole_command(ctx,
