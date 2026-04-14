@@ -1,56 +1,202 @@
-async def extract_soundcloud_song_info(search: str) -> dict:
-    if yt_dlp is None:
-        raise RuntimeError("yt-dlp is not installed.")
+import os
+import json
+import random
+import re
+import asyncio
+from pathlib import Path
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
-    loop = asyncio.get_running_loop()
+import discord
+from discord.ext import commands
 
-    def _extract():
-        target = search.strip()
+try:
+    import yt_dlp
+except ImportError:
+    yt_dlp = None
 
-        with yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS) as ydl:
-            if is_url(target):
-                if not is_soundcloud_url(target):
-                    raise RuntimeError("Only SoundCloud links are allowed.")
-                info = ydl.extract_info(target, download=False)
-            else:
-                # do NOT manually fall back anywhere else
-                info = ydl.extract_info(target, download=False)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-            if info is None:
-                return None
+print("SPRINGBOT SAFE BUILD ACTIVE")
 
-            if "entries" in info:
-                entries = info.get("entries") or []
-                if not entries:
-                    return None
-                info = entries[0]
+TOKEN = os.getenv("DISCORD_TOKEN")
+PREFIX = "!"
+FFMPEG_PATH = os.getenv("FFMPEG_PATH", "ffmpeg")
 
-            if info is None:
-                return None
+CONFIG_FILE = Path("springbot_config.json")
+ECONOMY_FILE = Path("springbot_economy.json")
 
-            webpage_url = info.get("webpage_url") or ""
-            extractor = str(info.get("extractor", "")).lower()
-            extractor_key = str(info.get("extractor_key", "")).lower()
+DEFAULT_WELCOME_MESSAGES = [
+    "🌸 Welcome to the server, {member.mention}! SpringBot is glad you're here.",
+    "🌿 A new member has joined: {member.mention}. Welcome in.",
+    "☀️ Everybody welcome {member.mention} to the server.",
+    "🌷 Fresh energy just arrived. Welcome, {member.mention}.",
+]
 
-            valid_sc = (
-                "soundcloud" in extractor
-                or "soundcloud" in extractor_key
-                or is_soundcloud_url(webpage_url)
-            )
+DEFAULT_GOODBYE_MESSAGES = [
+    "🍃 {member} has left the server.",
+    "🌙 Goodbye, {member}.",
+    "🌧️ {member} has departed. SpringBot will remember you.",
+    "🌸 {member} left the garden.",
+]
 
-            if not valid_sc:
-                raise RuntimeError(
-                    f"Blocked non-SoundCloud result. extractor={extractor} extractor_key={extractor_key} url={webpage_url}"
-                )
+DEFAULT_CONFIG = {
+    "welcome_channel": None,
+    "goodbye_channel": None,
+    "welcome_messages": DEFAULT_WELCOME_MESSAGES,
+    "goodbye_messages": DEFAULT_GOODBYE_MESSAGES,
+}
 
-            return {
-                "title": info.get("title", "Unknown title"),
-                "url": info.get("url"),
-                "webpage_url": webpage_url,
-                "duration": info.get("duration"),
-                "uploader": info.get("uploader", "Unknown uploader"),
-                "thumbnail": info.get("thumbnail"),
-                "requested_by": None,
-            }
+DEFAULT_ECONOMY = {
+    "users": {}
+}
 
-    return await loop.run_in_executor(None, _extract)
+SPRINGBOT_RULES = [
+    "Be respectful to everyone.",
+    "No hate speech, racism, or harassment.",
+    "No spam or excessive self-promotion.",
+    "Keep content in the correct channels.",
+    "Use common sense and listen to staff.",
+]
+
+ROAST_LINES = [
+    "{target.mention}, you bring the same energy as a 2% phone battery.",
+    "{target.mention}, even your shadow tries to avoid being seen with you.",
+    "{target.mention}, you are proof that auto-correct gives up sometimes.",
+    "{target.mention}, your Wi-Fi signal has more personality than you.",
+]
+
+EIGHT_BALL_ANSWERS = [
+    "Yes.",
+    "No.",
+    "Definitely.",
+    "Absolutely not.",
+    "Ask again later.",
+    "Without a doubt.",
+    "Very unlikely.",
+    "Signs point to yes.",
+]
+
+YTDL_FORMAT_OPTIONS = {
+    "format": "bestaudio/best",
+    "noplaylist": True,
+    "quiet": True,
+    "no_warnings": True,
+    "source_address": "0.0.0.0",
+    "extract_flat": False,
+    "ignoreconfig": True,
+    "default_search": "scsearch1",
+}
+
+FFMPEG_OPTIONS = {
+    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+    "options": "-vn",
+}
+
+START_TIME = datetime.now(timezone.utc)
+
+
+def load_json_file(path: Path, default_data: dict) -> dict:
+    if not path.exists():
+        path.write_text(json.dumps(default_data, indent=4), encoding="utf-8")
+        return json.loads(json.dumps(default_data))
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return json.loads(json.dumps(default_data))
+
+
+def save_json_file(path: Path, data: dict) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+
+def load_config() -> dict:
+    data = load_json_file(CONFIG_FILE, DEFAULT_CONFIG)
+    for key, value in DEFAULT_CONFIG.items():
+        if key not in data:
+            data[key] = value
+    return data
+
+
+def save_config(data: dict) -> None:
+    save_json_file(CONFIG_FILE, data)
+
+
+def load_economy() -> dict:
+    data = load_json_file(ECONOMY_FILE, DEFAULT_ECONOMY)
+    data.setdefault("users", {})
+    return data
+
+
+def save_economy(data: dict) -> None:
+    save_json_file(ECONOMY_FILE, data)
+
+
+config = load_config()
+economy = load_economy()
+
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+intents.voice_states = True
+
+bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None)
+
+
+class GuildMusicState:
+    def __init__(self):
+        self.queue = []
+        self.now_playing = None
+        self.text_channel_id = None
+        self.lock = asyncio.Lock()
+
+
+music_states = {}
+
+
+def get_music_state(guild_id: int) -> GuildMusicState:
+    if guild_id not in music_states:
+        music_states[guild_id] = GuildMusicState()
+    return music_states[guild_id]
+
+
+def get_user_record(user_id: int) -> dict:
+    user_key = str(user_id)
+    users = economy.setdefault("users", {})
+    if user_key not in users:
+        users[user_key] = {
+            "wallet": 0,
+            "last_daily": None,
+        }
+    return users[user_key]
+
+
+def get_welcome_channel(guild: discord.Guild):
+    channel_id = config.get("welcome_channel")
+    return guild.get_channel(channel_id) if channel_id else None
+
+
+def get_goodbye_channel(guild: discord.Guild):
+    channel_id = config.get("goodbye_channel")
+    return guild.get_channel(channel_id) if channel_id else None
+
+
+def format_uptime() -> str:
+    delta = datetime.now(timezone.utc) - START_TIME
+    total_seconds = int(delta.total_seconds())
+    days, rem = divmod(total_seconds, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, seconds = divmod(rem, 60)
+    return f"{days}d {hours}h {minutes}m {seconds}s"
+
+
+def build_help_embed() -> discord.Embed:
+    embed = discord.Embed(
+        title="🌸 SpringBot Commands",
+        description="Only working commands are shown here
