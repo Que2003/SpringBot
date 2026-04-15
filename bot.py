@@ -980,4 +980,107 @@ A_PLUS_STUDY_DATA = {
         ],
     },
 }
+@bot.command(name="aplus")
+async def aplus_command(ctx, *, topic: str = None):
+    if not topic:
+        await ctx.send(
+            "**A+ topics:** `objectives1201`, `objectives1202`, `ports`, `tcpudp`, "
+            "`usb`, `ram`, `fnkeys`, `wifi`, `mobile`"
+        )
+        return
+
+    topic = topic.lower().strip()
+
+    if topic == "objectives1201":
+        domains = A_PLUS_STUDY_DATA["objectives_1201"]["domains"]
+        lines = [f"**{k}** — {v}" for k, v in domains.items()]
+        await ctx.send("**CompTIA A+ Core 1 (220-1201)**\n" + "\n".join(lines))
+        return
+
+    if topic == "objectives1202":
+        domains = A_PLUS_STUDY_DATA["objectives_1202"]["domains"]
+        lines = [f"**{k}** — {v}" for k, v in domains.items()]
+        await ctx.send("**CompTIA A+ Core 2 (220-1202)**\n" + "\n".join(lines))
+        return
+
+    if topic == "ports":
+        ports = A_PLUS_STUDY_DATA["ports"]
+        lines = [f"**{k}** — {v}" for k, v in ports.items()]
+        await ctx.send("**A+ Ports and Protocols**\n" + "\n".join(lines[:25]))
+        return
+
+    if topic == "tcpudp":
+        tcp = "\n".join(f"- {x}" for x in A_PLUS_STUDY_DATA["tcp_vs_udp"]["tcp"])
+        udp = "\n".join(f"- {x}" for x in A_PLUS_STUDY_DATA["tcp_vs_udp"]["udp"])
+        await ctx.send(f"**TCP**\n{tcp}\n\n**UDP**\n{udp}")
+        return
+
+    if topic == "usb":
+        usb2 = ", ".join(A_PLUS_STUDY_DATA["usb_types"]["usb_2"])
+        usb3 = ", ".join(A_PLUS_STUDY_DATA["usb_types"]["usb_3"])
+        await ctx.send(f"**USB 1.0/2.0:** {usb2}\n**USB 3.0/3.1:** {usb3}")
+        return
+
+    if topic == "ram":
+        dimm = A_PLUS_STUDY_DATA["ram"]["dimm"]
+        sodimm = A_PLUS_STUDY_DATA["ram"]["sodimm"]
+        dimm_lines = [f"{k}: {v['pins']} pins, {v['channels']} channel(s), {v['voltage']}V" for k, v in dimm.items()]
+        sodimm_lines = [f"{k}: {v['pins']} pins, {v['channels']} channel(s), {v['voltage']}V" for k, v in sodimm.items()]
+        await ctx.send(
+            "**DIMM**\n" + "\n".join(dimm_lines) +
+            "\n\n**SODIMM**\n" + "\n".join(sodimm_lines)
+        )
+        return
+
+    if topic == "fnkeys":
+        keys = A_PLUS_STUDY_DATA["function_keys"]
+        lines = [f"**{k}** — {v}" for k, v in keys.items()]
+        await ctx.send("**Default Function Keys**\n" + "\n".join(lines))
+        return
+
+    if topic == "wifi":
+        freqs = ", ".join(A_PLUS_STUDY_DATA["wifi_basics"]["frequencies"])
+        standards = "\n".join(f"**{k}** — {v}" for k, v in A_PLUS_STUDY_DATA["wifi_basics"]["standards"].items())
+        placement = "\n".join(f"- {x}" for x in A_PLUS_STUDY_DATA["wifi_basics"]["placement"])
+        await ctx.send(
+            f"**Wi-Fi Frequencies:** {freqs}\n\n"
+            f"**Standards**\n{standards}\n\n"
+            f"**Placement Tips**\n{placement}"
+        )
+        return
+
+    if topic == "mobile":
+        methods = ", ".join(A_PLUS_STUDY_DATA["mobile"]["connection_methods"])
+        accessories = ", ".join(A_PLUS_STUDY_DATA["mobile"]["accessories"])
+        await ctx.send(
+            f"**Mobile Connection Methods:** {methods}\n"
+            f"**Mobile Accessories:** {accessories}"
+        )
+        return
+
+    await ctx.send("Unknown A+ topic. Use `!aplus` to see options.")
+    @bot.command(name="aplusfind")
+async def aplusfind_command(ctx, *, term: str):
+    term_lower = term.lower()
+    matches = []
+
+    def walk(obj, path=""):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                walk(v, f"{path} {k}".strip())
+        elif isinstance(obj, list):
+            for item in obj:
+                walk(item, path)
+        else:
+            text = str(obj)
+            if term_lower in text.lower() or term_lower in path.lower():
+                matches.append(f"**{path}** — {text}")
+
+    walk(A_PLUS_STUDY_DATA)
+
+    if not matches:
+        await ctx.send(f"No A+ match found for `{term}`.")
+        return
+
+    await ctx.send("\n".join(matches[:15]))
 bot.run(TOKEN)
