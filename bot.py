@@ -16,6 +16,11 @@ except ImportError:
     yt_dlp = None
 
 try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+
+try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
@@ -24,8 +29,11 @@ except ImportError:
 print("SPRINGBOT SAFE BUILD ACTIVE")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PREFIX = "!"
 FFMPEG_PATH = os.getenv("FFMPEG_PATH", "ffmpeg")
+
+client = OpenAI(api_key=OPENAI_API_KEY) if OpenAI and OPENAI_API_KEY else None
 
 CONFIG_FILE = Path("springbot_config.json")
 ECONOMY_FILE = Path("springbot_economy.json")
@@ -447,7 +455,7 @@ async def help_command(ctx):
 async def about_command(ctx):
     embed = discord.Embed(
         title="About SpringBot",
-        description="SpringBot is a multi-purpose Discord bot with moderation, welcome/goodbye, utility, fun, economy, and SoundCloud music features.",
+        description="SpringBot is a multi-purpose Discord bot with moderation, welcome/goodbye, utility, fun, economy, SoundCloud music, and OpenAI-powered chat.",
         color=discord.Color.green()
     )
     await ctx.send(embed=embed)
@@ -574,7 +582,41 @@ async def avatar_command(ctx, member: discord.Member = None):
 
 @bot.command(name="ask")
 async def ask_command(ctx, *, question: str):
-    await ctx.send(f"🤖 AI system not connected yet.\nYou asked: `{question}`")
+    if OpenAI is None:
+        await ctx.send("The `openai` package is not installed.")
+        return
+
+    if client is None:
+        await ctx.send("OPENAI_API_KEY is missing.")
+        return
+
+    async with ctx.typing():
+        try:
+            loop = asyncio.get_running_loop()
+
+            def _run():
+                response = client.responses.create(
+                    model="gpt-5.4-mini",
+                    input=(
+                        "You are SpringBot, a smart Discord assistant. "
+                        "Be clear, helpful, and concise.\n\n"
+                        f"User question: {question}"
+                    ),
+                )
+                return response.output_text
+
+            answer = await loop.run_in_executor(None, _run)
+        except Exception as e:
+            await ctx.send(f"AI error: {e}")
+            return
+
+    if not answer:
+        await ctx.send("I couldn't generate a response.")
+        return
+
+    chunks = [answer[i:i + 1900] for i in range(0, len(answer), 1900)]
+    for chunk in chunks:
+        await ctx.send(chunk)
 
 
 @bot.command(name="roast")
@@ -842,245 +884,5 @@ async def on_command_error(ctx, error):
 
 if not TOKEN:
     raise ValueError("DISCORD_TOKEN is missing from your environment variables.")
-A_PLUS_STUDY_DATA = {
-    "objectives_1201": {
-        "title": "CompTIA A+ Core 1 (220-1201)",
-        "domains": {
-            "1.0 Mobile Devices": "13%",
-            "2.0 Networking": "23%",
-            "3.0 Hardware": "25%",
-            "4.0 Virtualization and Cloud Computing": "11%",
-            "5.0 Hardware and Network Troubleshooting": "28%",
-        },
-    },
-    "objectives_1202": {
-        "title": "CompTIA A+ Core 2 (220-1202)",
-        "domains": {
-            "1.0 Operating Systems": "28%",
-            "2.0 Security": "28%",
-            "3.0 Software Troubleshooting": "23%",
-            "4.0 Operational Procedures": "21%",
-        },
-    },
-    "ports": {
-        "20-21": "FTP - File Transfer Protocol",
-        "22": "SSH / SFTP - Secure Shell / Secure File Transfer Protocol",
-        "23": "Telnet",
-        "25": "SMTP",
-        "53": "DNS",
-        "67/68": "DHCP",
-        "69": "TFTP",
-        "80": "HTTP",
-        "110": "POP3",
-        "137": "NetBIOS",
-        "139": "NetBT",
-        "143": "IMAP",
-        "161/162": "SNMP",
-        "389": "LDAP",
-        "443": "HTTPS",
-        "445": "SMB/CIFS",
-        "3389": "RDP",
-        "465": "SMTP over SSL",
-        "587": "SMTP with TLS",
-        "990": "FTPS",
-        "993": "IMAPS",
-        "995": "POP3 Secure",
-    },
-    "tcp_vs_udp": {
-        "tcp": [
-            "Connection-oriented",
-            "Uses a three-way handshake",
-            "Reliable delivery",
-            "Uses acknowledgements",
-            "Retransmits lost packets",
-            "Ensures ordered delivery",
-            "Used by HTTP, HTTPS, FTP, SMTP",
-        ],
-        "udp": [
-            "Connectionless",
-            "No handshake",
-            "No guaranteed delivery",
-            "No acknowledgements",
-            "No retransmission support",
-            "Faster with lower overhead",
-            "Used by DNS, DHCP, VoIP, streaming",
-        ],
-    },
-    "usb_types": {
-        "usb_2": ["Type-A", "Type-B", "Mini-A", "Mini-B", "Micro-A", "Micro-B"],
-        "usb_3": ["Type-A", "Type-B", "Micro-B", "Type-C"],
-    },
-    "ram": {
-        "dimm": {
-            "DDR": {"pins": 184, "channels": 1, "voltage": 2.5},
-            "DDR2": {"pins": 240, "channels": 1, "voltage": 1.8},
-            "DDR3": {"pins": 240, "channels": 1, "voltage": 1.5},
-            "DDR4": {"pins": 288, "channels": 1, "voltage": 1.2},
-            "DDR5": {"pins": 288, "channels": 2, "voltage": 1.1},
-        },
-        "sodimm": {
-            "DDR": {"pins": 200, "channels": 1, "voltage": 2.5},
-            "DDR2": {"pins": 200, "channels": 1, "voltage": 1.8},
-            "DDR3": {"pins": 204, "channels": 1, "voltage": 1.5},
-            "DDR4": {"pins": 260, "channels": 1, "voltage": 1.2},
-            "DDR5": {"pins": 262, "channels": 2, "voltage": 1.1},
-        },
-    },
-    "function_keys": {
-        "F1": "Opens help menu",
-        "F2": "Renames selected file/folder in Windows",
-        "F3": "Opens Search",
-        "F4": "Alt + F4 closes current window",
-        "F5": "Refreshes page or document",
-        "F6": "Moves cursor to browser address bar",
-        "F7": "Spellcheck in Microsoft Office apps",
-        "F8": "Boots Safe Mode in older Windows versions",
-        "F9": "Refreshes Word / Send-Receive in Outlook",
-        "F10": "Shift + F10 opens menu bar",
-        "F11": "Enters or exits full-screen mode",
-        "F12": "Save As in Word / opens browser developer tools",
-    },
-    "wifi_basics": {
-        "frequencies": ["2.4 GHz", "5 GHz", "6 GHz"],
-        "standards": {
-            "802.11a": "5 GHz / 54 Mbps",
-            "802.11b": "2.4 GHz / 11 Mbps",
-            "802.11g": "2.4 GHz / 54 Mbps",
-            "802.11n": "Wi-Fi 4 / 2.4 and 5 GHz / up to 600 Mbps",
-            "802.11ac": "Wi-Fi 5 / 5 GHz / up to 9.6 Gbps",
-            "802.11ax": "Wi-Fi 6/6E / 2.4, 5, 6 GHz / up to 9.6 Gbps",
-            "802.11be": "Wi-Fi 7 / 2.4, 5, 6 GHz / up to 46 Gbps",
-        },
-        "placement": [
-            "Place router in a central, elevated spot",
-            "Avoid thick walls",
-            "Avoid large appliances",
-            "Avoid electronics that interfere with signal",
-            "Laptop Wi-Fi antenna is often in the display/top half",
-        ],
-    },
-    "mobile": {
-        "connection_methods": [
-            "USB",
-            "USB-C",
-            "microUSB",
-            "miniUSB",
-            "Lightning",
-            "NFC",
-            "Bluetooth",
-            "Tethering/hotspot",
-        ],
-        "accessories": [
-            "Stylus",
-            "Headsets",
-            "Speakers",
-            "Webcam",
-            "Docking station",
-            "Port replicator",
-        ],
-    },
-}
-@bot.command(name="aplus")
-async def aplus_command(ctx, *, topic: str = None):
-    if not topic:
-        await ctx.send(
-            "**A+ topics:** `objectives1201`, `objectives1202`, `ports`, `tcpudp`, "
-            "`usb`, `ram`, `fnkeys`, `wifi`, `mobile`"
-        )
-        return
 
-    topic = topic.lower().strip()
-
-    if topic == "objectives1201":
-        domains = A_PLUS_STUDY_DATA["objectives_1201"]["domains"]
-        lines = [f"**{k}** — {v}" for k, v in domains.items()]
-        await ctx.send("**CompTIA A+ Core 1 (220-1201)**\n" + "\n".join(lines))
-        return
-
-    if topic == "objectives1202":
-        domains = A_PLUS_STUDY_DATA["objectives_1202"]["domains"]
-        lines = [f"**{k}** — {v}" for k, v in domains.items()]
-        await ctx.send("**CompTIA A+ Core 2 (220-1202)**\n" + "\n".join(lines))
-        return
-
-    if topic == "ports":
-        ports = A_PLUS_STUDY_DATA["ports"]
-        lines = [f"**{k}** — {v}" for k, v in ports.items()]
-        await ctx.send("**A+ Ports and Protocols**\n" + "\n".join(lines[:25]))
-        return
-
-    if topic == "tcpudp":
-        tcp = "\n".join(f"- {x}" for x in A_PLUS_STUDY_DATA["tcp_vs_udp"]["tcp"])
-        udp = "\n".join(f"- {x}" for x in A_PLUS_STUDY_DATA["tcp_vs_udp"]["udp"])
-        await ctx.send(f"**TCP**\n{tcp}\n\n**UDP**\n{udp}")
-        return
-
-    if topic == "usb":
-        usb2 = ", ".join(A_PLUS_STUDY_DATA["usb_types"]["usb_2"])
-        usb3 = ", ".join(A_PLUS_STUDY_DATA["usb_types"]["usb_3"])
-        await ctx.send(f"**USB 1.0/2.0:** {usb2}\n**USB 3.0/3.1:** {usb3}")
-        return
-
-    if topic == "ram":
-        dimm = A_PLUS_STUDY_DATA["ram"]["dimm"]
-        sodimm = A_PLUS_STUDY_DATA["ram"]["sodimm"]
-        dimm_lines = [f"{k}: {v['pins']} pins, {v['channels']} channel(s), {v['voltage']}V" for k, v in dimm.items()]
-        sodimm_lines = [f"{k}: {v['pins']} pins, {v['channels']} channel(s), {v['voltage']}V" for k, v in sodimm.items()]
-        await ctx.send(
-            "**DIMM**\n" + "\n".join(dimm_lines) +
-            "\n\n**SODIMM**\n" + "\n".join(sodimm_lines)
-        )
-        return
-
-    if topic == "fnkeys":
-        keys = A_PLUS_STUDY_DATA["function_keys"]
-        lines = [f"**{k}** — {v}" for k, v in keys.items()]
-        await ctx.send("**Default Function Keys**\n" + "\n".join(lines))
-        return
-
-    if topic == "wifi":
-        freqs = ", ".join(A_PLUS_STUDY_DATA["wifi_basics"]["frequencies"])
-        standards = "\n".join(f"**{k}** — {v}" for k, v in A_PLUS_STUDY_DATA["wifi_basics"]["standards"].items())
-        placement = "\n".join(f"- {x}" for x in A_PLUS_STUDY_DATA["wifi_basics"]["placement"])
-        await ctx.send(
-            f"**Wi-Fi Frequencies:** {freqs}\n\n"
-            f"**Standards**\n{standards}\n\n"
-            f"**Placement Tips**\n{placement}"
-        )
-        return
-
-    if topic == "mobile":
-        methods = ", ".join(A_PLUS_STUDY_DATA["mobile"]["connection_methods"])
-        accessories = ", ".join(A_PLUS_STUDY_DATA["mobile"]["accessories"])
-        await ctx.send(
-            f"**Mobile Connection Methods:** {methods}\n"
-            f"**Mobile Accessories:** {accessories}"
-        )
-        return
-
-    await ctx.send("Unknown A+ topic. Use `!aplus` to see options.")
-    @bot.command(name="aplusfind")
-async def aplusfind_command(ctx, *, term: str):
-    term_lower = term.lower()
-    matches = []
-
-    def walk(obj, path=""):
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                walk(v, f"{path} {k}".strip())
-        elif isinstance(obj, list):
-            for item in obj:
-                walk(item, path)
-        else:
-            text = str(obj)
-            if term_lower in text.lower() or term_lower in path.lower():
-                matches.append(f"**{path}** — {text}")
-
-    walk(A_PLUS_STUDY_DATA)
-
-    if not matches:
-        await ctx.send(f"No A+ match found for `{term}`.")
-        return
-
-    await ctx.send("\n".join(matches[:15]))
 bot.run(TOKEN)
