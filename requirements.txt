@@ -1,5 +1,6 @@
-discord.py[voice]
+discord.py
 python-dotenv
+openai
 yt-dlp
 PyNaCl
-openai
+deep-translator
