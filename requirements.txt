@@ -5,3 +5,4 @@ openai
 yt-dlp
 requests
 deep-translator
+aiohttp
