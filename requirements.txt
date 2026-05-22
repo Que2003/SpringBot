@@ -4,3 +4,8 @@ openai
 yt-dlp
 PyNaCl
 deep-translator
+discord.py[voice]
+PyNaCl
+yt-dlp
+python-dotenv
+requests
