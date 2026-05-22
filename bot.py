@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import discord
 from discord.ext import commands
+import aiohttp
 
 try:
     import yt_dlp
@@ -30,6 +31,7 @@ print("SPRINGBOT SAFE BUILD ACTIVE")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SPRING_API_URL = os.getenv("SPRING_API_URL", "https://spring-virtual-offiice-pro.com")
 PREFIX = "!"
 FFMPEG_PATH = os.getenv("FFMPEG_PATH", "ffmpeg")
 
@@ -41,7 +43,7 @@ ECONOMY_FILE = Path("springbot_economy.json")
 DEFAULT_WELCOME_MESSAGES = [
     "🌸 Welcome to the server, {member.mention}! SpringBot is glad you're here.",
     "🌿 A new member has joined: {member.mention}. Welcome in.",
-    "☀️ Everybody welcome {member.mention} to the server.",
+    "☀ Everybody welcome {member.mention} to the server.",
     "🌷 Fresh energy just arrived. Welcome, {member.mention}.",
 ]
 
@@ -57,6 +59,7 @@ DEFAULT_CONFIG = {
     "goodbye_channel": None,
     "welcome_messages": DEFAULT_WELCOME_MESSAGES,
     "goodbye_messages": DEFAULT_GOODBYE_MESSAGES,
+    "spring_theme": "black",
 }
 
 DEFAULT_ECONOMY = {
@@ -474,6 +477,12 @@ def build_help_embed() -> discord.Embed:
     )
 
     embed.add_field(
+        name="Spring Virtual Office",
+        value="`!spring` - Open Spring Virtual Office\n`!spring chat` - Chat with AI\n`!spring theme` - Change theme\n`!spring info` - About Spring VO",
+        inline=False
+    )
+
+    embed.add_field(
         name="Server",
         value="`!rules`\n`!welcome`\n`!goodbye`\n`!setwelcome`\n`!setgoodbye`\n`!testwelcome`\n`!testgoodbye`",
         inline=False
@@ -527,6 +536,138 @@ def build_help_embed() -> discord.Embed:
 
     return embed
 
+
+# ==================== SPRING VIRTUAL OFFICE INTEGRATION ====================
+
+async def spring_api_chat(message: str) -> str:
+    """Send a message to Spring Virtual Office API and get a response."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{SPRING_API_URL}/api/chat",
+                json={"message": message},
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return data.get("reply", "No response from SpringBot.")
+                else:
+                    return "Spring Virtual Office is temporarily unavailable."
+    except Exception as e:
+        return f"Connection error: {e}"
+
+
+def build_spring_home_embed(theme: str = "black") -> discord.Embed:
+    """Build Spring Virtual Office home embed."""
+    theme_colors = {
+        "black": discord.Color.dark_gray(),
+        "glass": discord.Color.blue(),
+        "light": discord.Color.lighter_gray(),
+    }
+    
+    embed = discord.Embed(
+        title="🌿 Spring Virtual Office",
+        description="Your AI-powered workspace for modern teams",
+        color=theme_colors.get(theme, discord.Color.green())
+    )
+    
+    embed.add_field(
+        name="Your business, always available.",
+        value="Spring Virtual Office combines intelligent AI, empathetic support, and seamless scheduling — so your clients always feel heard, even when you're not there.",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="Quick Links",
+        value="`!spring chat` - Start chatting\n`!spring theme` - Change theme\n`!spring appointment` - Book appointment\n`!spring info` - Learn more",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="Stats",
+        value="**24/7** Available • **AI** Powered • **∞** Scalable",
+        inline=False
+    )
+    
+    embed.set_footer(text=f"Theme: {theme} | Visit: spring-virtual-offiice-pro.com")
+    return embed
+
+
+@bot.command(name="spring")
+async def spring_command(ctx, *, action: str = None):
+    """Access Spring Virtual Office features."""
+    if not action:
+        embed = build_spring_home_embed(config.get("spring_theme", "black"))
+        await ctx.send(embed=embed)
+        return
+    
+    action = action.lower().strip()
+    
+    if action == "chat":
+        await ctx.send("🌿 **Spring Virtual Office Chat**\nUse `!springchat <message>` to chat with SpringBot!")
+    
+    elif action == "theme":
+        embed = discord.Embed(
+            title="🎨 Spring Virtual Office Themes",
+            description="Choose a theme:",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="Black", value="`!springtheme black`", inline=True)
+        embed.add_field(name="Glassmorphism", value="`!springtheme glass`", inline=True)
+        embed.add_field(name="Light", value="`!springtheme light`", inline=True)
+        await ctx.send(embed=embed)
+    
+    elif action == "appointment":
+        await ctx.send("📅 **Book an Appointment**\nVisit: spring-virtual-offiice-pro.com/chat")
+    
+    elif action == "info":
+        embed = discord.Embed(
+            title="ℹ️ About Spring Virtual Office",
+            description="Spring Virtual Office is a premium AI-powered workspace platform.",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="Features", value="• AI Chat\n• Scheduling\n• Ticket Support\n• 24/7 Availability", inline=False)
+        embed.add_field(name="Website", value="[spring-virtual-offiice-pro.com](https://spring-virtual-offiice-pro.com)", inline=False)
+        await ctx.send(embed=embed)
+
+
+@bot.command(name="springchat")
+async def springchat_command(ctx, *, message: str):
+    """Chat with SpringBot via Spring Virtual Office API."""
+    async with ctx.typing():
+        response = await spring_api_chat(message)
+    
+    embed = discord.Embed(
+        title="🌿 SpringBot Response",
+        description=response,
+        color=discord.Color.green()
+    )
+    embed.set_footer(text="Powered by Spring Virtual Office")
+    
+    # Split response if too long
+    if len(response) > 1024:
+        embed.clear_fields()
+        for i, chunk in enumerate([response[j:j+1024] for j in range(0, len(response), 1024)], 1):
+            embed.add_field(name=f"Response {i}" if i > 1 else "Response", value=chunk, inline=False)
+    
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="springtheme")
+async def springtheme_command(ctx, theme: str = None):
+    """Change Spring Virtual Office theme."""
+    if not theme or theme.lower() not in ["black", "glass", "light"]:
+        await ctx.send("Use `!springtheme black`, `!springtheme glass`, or `!springtheme light`")
+        return
+    
+    config["spring_theme"] = theme.lower()
+    save_config(config)
+    
+    embed = build_spring_home_embed(theme.lower())
+    await ctx.send(f"✅ Theme changed to **{theme}**!", embed=embed)
+
+
+# ==================== REST OF ORIGINAL COMMANDS ====================
 
 async def set_welcome_channel_logic(ctx, channel: discord.TextChannel) -> None:
     config["welcome_channel"] = channel.id
@@ -721,7 +862,7 @@ async def help_command(ctx):
 async def about_command(ctx):
     embed = discord.Embed(
         title="About SpringBot",
-        description="SpringBot is a multi-purpose Discord bot with moderation, welcome/goodbye, utility, fun, economy, SoundCloud music, OpenAI-powered chat, and built-in CompTIA A+ Core 1 study commands.",
+        description="SpringBot is a multi-purpose Discord bot with moderation, welcome/goodbye, utility, fun, economy, SoundCloud music, OpenAI-powered chat, Spring Virtual Office integration, and built-in CompTIA A+ Core 1 study commands.",
         color=discord.Color.green()
     )
     await ctx.send(embed=embed)
@@ -861,15 +1002,20 @@ async def ask_command(ctx, *, question: str):
             loop = asyncio.get_running_loop()
 
             def _run():
-                response = client.responses.create(
-                    model="gpt-5.4-mini",
-                    input=(
-                        "You are SpringBot, a smart Discord assistant. "
-                        "Be clear, helpful, and concise.\n\n"
-                        f"User question: {question}"
-                    ),
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are SpringBot, a smart Discord assistant. Be clear, helpful, and concise."
+                        },
+                        {
+                            "role": "user",
+                            "content": question
+                        }
+                    ],
                 )
-                return response.output_text
+                return response.choices[0].message.content
 
             answer = await loop.run_in_executor(None, _run)
         except Exception as e:
@@ -1241,8 +1387,6 @@ async def aplussearch_command(ctx, *, term: str):
         await ctx.send(chunk)
 
 
-
-
 @bot.command(name="join")
 async def join_command(ctx):
     voice_client = await join_author_voice_channel(ctx)
@@ -1431,4 +1575,3 @@ if not TOKEN:
     raise ValueError("DISCORD_TOKEN is missing from your environment variables.")
 
 bot.run(TOKEN)
-
