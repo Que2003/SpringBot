@@ -6,3 +6,6 @@ yt-dlp
 requests
 deep-translator
 aiohttp
+fastapi
+uvicorn
+python-multipart
