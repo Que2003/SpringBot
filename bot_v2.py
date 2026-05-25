@@ -1,12 +1,11 @@
 import os
-import json
+import re
 import sqlite3
 import asyncio
-from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 try:
     from dotenv import load_dotenv
@@ -32,12 +31,19 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 intents.guilds = True
+
 bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None)
 
 SYSTEM_PROMPT = """
-You are SpringBot, an advanced AI assistant for Discord communities, IT support, cybersecurity study, server management, and Spring Virtual Office.
-Be useful, direct, professional, and practical. When you give technical help, give steps that can actually be followed.
-Never expose API keys, tokens, passwords, or private environment variables.
+You are SpringBot, an advanced AI assistant for Discord communities, IT support, cybersecurity study,
+server management, automation, and Spring Virtual Office.
+
+Your style:
+- Useful, direct, professional, and practical.
+- Give steps people can actually follow.
+- Help with IT support, Discord community operations, business workflows, studying, and AI automation.
+- Never expose API keys, Discord tokens, passwords, private environment variables, or secrets.
+- Never claim you completed actions that were not actually executed.
 """
 
 SAFE_ACTIONS = {
@@ -46,7 +52,28 @@ SAFE_ACTIONS = {
     "study_quiz": "Generate a study quiz.",
     "summarize_channel": "Summarize recent channel messages.",
     "make_announcement": "Draft a server announcement.",
+    "onboarding": "Create a polished onboarding message for new members.",
+    "mod_scan": "Review recent messages for moderation concerns.",
+    "daily_brief": "Create a daily server/business brief.",
+    "project_plan": "Create a project plan from an idea.",
 }
+
+SCAM_PATTERNS = [
+    r"free\s+nitro",
+    r"steam\s+gift",
+    r"claim\s+your\s+prize",
+    r"airdrop",
+    r"wallet\s+connect",
+    r"verify\s+your\s+account",
+    r"discord\s+staff",
+    r"click\s+this\s+link",
+    r"limited\s+time\s+offer",
+]
+
+TOXIC_WORDS = [
+    "kys",
+    "kill yourself",
+]
 
 ACTIONS_HELP = "\n".join([f"`{name}` - {desc}" for name, desc in SAFE_ACTIONS.items()])
 
@@ -100,11 +127,76 @@ def setup_database():
             PRIMARY KEY (guild_id, key)
         )
         """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS knowledge_base (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            created_by TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS reminders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id TEXT NOT NULL,
+            channel_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            remind_at TEXT NOT NULL,
+            message TEXT NOT NULL,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS incidents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id TEXT NOT NULL,
+            channel_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            message TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS guild_settings (
+            guild_id TEXT NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (guild_id, key)
+        )
+        """)
         conn.commit()
 
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
+
+
+def parse_iso(value):
+    return datetime.fromisoformat(value)
+
+
+def set_guild_setting(guild_id, key, value):
+    with db_connect() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO guild_settings (guild_id, key, value, updated_at) VALUES (?, ?, ?, ?)",
+            (str(guild_id), key, str(value), now_iso()),
+        )
+        conn.commit()
+
+
+def get_guild_setting(guild_id, key, default=None):
+    with db_connect() as conn:
+        row = conn.execute(
+            "SELECT value FROM guild_settings WHERE guild_id=? AND key=?",
+            (str(guild_id), key),
+        ).fetchone()
+    return row["value"] if row else default
 
 
 def add_conversation(user_id, guild_id, channel_id, role, content):
@@ -161,6 +253,15 @@ def delete_memory(user_id, guild_id, key=None):
         conn.commit()
 
 
+def log_incident(guild_id, channel_id, user_id, message, reason, severity="medium"):
+    with db_connect() as conn:
+        conn.execute(
+            "INSERT INTO incidents (guild_id, channel_id, user_id, message, reason, severity, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (str(guild_id), str(channel_id), str(user_id), message[:1000], reason, severity, now_iso()),
+        )
+        conn.commit()
+
+
 def format_uptime():
     delta = datetime.now(timezone.utc) - START_TIME
     total = int(delta.total_seconds())
@@ -174,15 +275,58 @@ def chunk_text(text, size=1800):
     return [text[i:i + size] for i in range(0, len(text), size)] or [""]
 
 
+def parse_reminder_time(value):
+    value = value.strip().lower()
+    match = re.fullmatch(r"(\d+)(s|m|h|d)", value)
+    if not match:
+        return None
+
+    amount = int(match.group(1))
+    unit = match.group(2)
+
+    if unit == "s":
+        return timedelta(seconds=amount)
+    if unit == "m":
+        return timedelta(minutes=amount)
+    if unit == "h":
+        return timedelta(hours=amount)
+    if unit == "d":
+        return timedelta(days=amount)
+    return None
+
+
+def detect_risky_message(content):
+    lowered = content.lower()
+
+    for word in TOXIC_WORDS:
+        if word in lowered:
+            return "high", f"Toxic phrase detected: {word}"
+
+    for pattern in SCAM_PATTERNS:
+        if re.search(pattern, lowered):
+            return "high", f"Possible scam/phishing pattern: {pattern}"
+
+    if lowered.count("http://") + lowered.count("https://") >= 3:
+        return "medium", "Multiple links in one message"
+
+    if "@everyone" in lowered or "@here" in lowered:
+        return "medium", "Mass mention detected"
+
+    return None, None
+
+
 async def ai_response(user_message, user_id, guild_id):
     memory = get_memory(user_id, guild_id)
     history = get_recent_context(user_id, guild_id)
+    kb_context = get_knowledge_context(guild_id, user_message)
 
     memory_text = "\n".join([f"- {k}: {v}" for k, v in memory.items()]) or "No saved memory yet."
+    kb_text = kb_context or "No matching knowledge-base notes."
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "system", "content": f"Saved user memory for this server:\n{memory_text}"},
+        {"role": "system", "content": f"Relevant SpringBot knowledge-base notes:\n{kb_text}"},
     ]
 
     for row in history:
@@ -206,9 +350,62 @@ async def ai_response(user_message, user_id, guild_id):
         return f"AI error: {e}"
 
 
+def get_knowledge_context(guild_id, query, limit=5):
+    terms = [t.lower() for t in re.findall(r"[a-zA-Z0-9+#.-]{3,}", query or "")]
+    if not terms:
+        return ""
+
+    with db_connect() as conn:
+        rows = conn.execute(
+            "SELECT title, body FROM knowledge_base WHERE guild_id=? ORDER BY id DESC LIMIT 50",
+            (str(guild_id),),
+        ).fetchall()
+
+    scored = []
+    for row in rows:
+        text = f"{row['title']} {row['body']}".lower()
+        score = sum(1 for term in terms if term in text)
+        if score:
+            scored.append((score, row["title"], row["body"]))
+
+    scored.sort(reverse=True, key=lambda x: x[0])
+    return "\n\n".join([f"Title: {title}\n{body[:900]}" for _, title, body in scored[:limit]])
+
+
+@tasks.loop(seconds=30)
+async def reminder_loop():
+    await bot.wait_until_ready()
+    setup_database()
+
+    now = datetime.now(timezone.utc)
+    with db_connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM reminders WHERE status='open' ORDER BY remind_at ASC LIMIT 10"
+        ).fetchall()
+
+    for row in rows:
+        try:
+            remind_at = parse_iso(row["remind_at"])
+        except Exception:
+            continue
+
+        if remind_at > now:
+            continue
+
+        channel = bot.get_channel(int(row["channel_id"]))
+        if channel:
+            await channel.send(f"⏰ <@{row['user_id']}> reminder: {row['message']}")
+
+        with db_connect() as conn:
+            conn.execute("UPDATE reminders SET status='sent' WHERE id=?", (row["id"],))
+            conn.commit()
+
+
 @bot.event
 async def on_ready():
     setup_database()
+    if not reminder_loop.is_running():
+        reminder_loop.start()
     print(f"SpringBot V2 online as {bot.user}")
     await bot.change_presence(activity=discord.Game(name="SpringBot V2 | !v2help"))
 
@@ -216,14 +413,16 @@ async def on_ready():
 @bot.command(name="v2help")
 async def v2help(ctx):
     embed = discord.Embed(
-        title="🌸 SpringBot V2 Upgrade",
-        description="AI memory, AI actions, tickets, server health, study tools, and smarter chat.",
+        title="🌸 SpringBot V2 Premium",
+        description="AI memory, AI actions, tickets, moderation, knowledge base, reminders, server health, study tools, and smarter chat.",
         color=discord.Color.green(),
     )
-    embed.add_field(name="AI", value="`!springai <message>`\n`!summarize [amount]`", inline=False)
+    embed.add_field(name="AI", value="`!springai <message>`\n`!summarize [amount]`\n`!brainstorm <idea>`\n`!fixidea <problem>`", inline=False)
     embed.add_field(name="Memory", value="`!remember <key> = <value>`\n`!memory`\n`!forget <key>`\n`!forgetme`", inline=False)
-    embed.add_field(name="Actions", value="`!actions`\n`!do create_ticket <reason>`\n`!do server_health`\n`!do study_quiz <topic>`\n`!do make_announcement <topic>`", inline=False)
-    embed.add_field(name="Admin / Server", value="`!serverhealth`\n`!ticket <reason>`\n`!uptime2`", inline=False)
+    embed.add_field(name="AI Actions", value="`!actions`\n`!do create_ticket <reason>`\n`!do server_health`\n`!do study_quiz <topic>`\n`!do make_announcement <topic>`\n`!do daily_brief`\n`!do onboarding`", inline=False)
+    embed.add_field(name="Knowledge Base", value="`!kbadd <title> | <note>`\n`!kbsearch <term>`\n`!kblist`", inline=False)
+    embed.add_field(name="Admin / Server", value="`!serverhealth`\n`!automod on/off/status`\n`!modscan [amount]`\n`!incidents`\n`!ticket <reason>`", inline=False)
+    embed.add_field(name="Productivity", value="`!remind 10m check logs`\n`!dailybrief`\n`!onboard`\n`!projectplan <idea>`", inline=False)
     await ctx.send(embed=embed)
 
 
@@ -295,6 +494,14 @@ async def do_action(ctx, action: str = None, *, details: str = ""):
         prompt = f"Create a professional Discord announcement about: {topic}. Make it clear, polished, and useful."
         reply = await ai_response(prompt, ctx.author.id, ctx.guild.id if ctx.guild else 0)
         await ctx.send("📢 **Draft Announcement**\n" + reply)
+    elif action == "onboarding":
+        await onboard(ctx, target=None)
+    elif action == "mod_scan":
+        await modscan(ctx, amount=50)
+    elif action == "daily_brief":
+        await dailybrief(ctx)
+    elif action == "project_plan":
+        await projectplan(ctx, idea=details or "SpringBot AI platform")
     else:
         await ctx.send("Unknown action. Use `!actions` to see available actions.")
 
@@ -343,6 +550,7 @@ async def serverhealth(ctx):
     bots = len([m for m in guild.members if m.bot])
     humans = max(members - bots, 0)
     roles = len(guild.roles)
+    automod = get_guild_setting(guild.id, "automod", "off")
 
     recommendations = []
     if text_channels > 25:
@@ -351,6 +559,8 @@ async def serverhealth(ctx):
         recommendations.append("Bot count is high compared to human members. Review bot permissions.")
     if roles > 30:
         recommendations.append("Role count is high. Clean up unused roles to reduce permission mistakes.")
+    if automod != "on":
+        recommendations.append("Turn on SpringBot automod with `!automod on` for scam and toxic phrase detection.")
     if not recommendations:
         recommendations.append("Server structure looks clean. Keep improving onboarding, rules, and engagement.")
 
@@ -358,8 +568,67 @@ async def serverhealth(ctx):
     embed.add_field(name="Members", value=f"{members} total\n{humans} humans\n{bots} bots", inline=True)
     embed.add_field(name="Channels", value=f"{text_channels} text\n{voice_channels} voice", inline=True)
     embed.add_field(name="Roles", value=str(roles), inline=True)
+    embed.add_field(name="Automod", value=automod.upper(), inline=True)
     embed.add_field(name="Recommendations", value="\n".join([f"• {r}" for r in recommendations]), inline=False)
     await ctx.send(embed=embed)
+
+
+@bot.command(name="automod")
+@commands.has_permissions(manage_guild=True)
+async def automod(ctx, mode: str = "status"):
+    mode = mode.lower().strip()
+    if mode not in {"on", "off", "status"}:
+        await ctx.send("Use `!automod on`, `!automod off`, or `!automod status`.")
+        return
+
+    if mode in {"on", "off"}:
+        set_guild_setting(ctx.guild.id, "automod", mode)
+        await ctx.send(f"SpringBot automod is now **{mode.upper()}**.")
+        return
+
+    status = get_guild_setting(ctx.guild.id, "automod", "off")
+    await ctx.send(f"SpringBot automod status: **{status.upper()}**")
+
+
+@bot.command(name="incidents")
+@commands.has_permissions(manage_messages=True)
+async def incidents(ctx):
+    with db_connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM incidents WHERE guild_id=? ORDER BY id DESC LIMIT 10",
+            (str(ctx.guild.id),),
+        ).fetchall()
+
+    if not rows:
+        await ctx.send("No moderation incidents logged yet.")
+        return
+
+    lines = []
+    for row in rows:
+        lines.append(f"**{row['severity'].upper()}** <@{row['user_id']}> — {row['reason']}")
+
+    await ctx.send("🛡️ **Recent SpringBot Incidents**\n" + "\n".join(lines))
+
+
+@bot.command(name="modscan")
+@commands.has_permissions(manage_messages=True)
+async def modscan(ctx, amount: int = 50):
+    amount = max(5, min(amount, 100))
+    flagged = []
+
+    async for msg in ctx.channel.history(limit=amount):
+        if msg.author.bot:
+            continue
+        severity, reason = detect_risky_message(msg.content)
+        if severity:
+            flagged.append((severity, reason, msg.author.mention, msg.content[:100]))
+
+    if not flagged:
+        await ctx.send("🛡️ No obvious scam/toxic patterns found in recent messages.")
+        return
+
+    lines = [f"**{sev.upper()}** {user} — {reason} — `{content}`" for sev, reason, user, content in flagged[:10]]
+    await ctx.send("🛡️ **SpringBot Mod Scan Results**\n" + "\n".join(lines))
 
 
 @bot.command(name="summarize")
@@ -376,7 +645,7 @@ async def summarize(ctx, amount: int = 50):
         await ctx.send("No user messages found to summarize.")
         return
 
-    prompt = "Summarize this Discord conversation. Include key points, decisions, action items, and any unresolved questions.\n\n" + "\n".join(messages[-amount:])
+    prompt = "Summarize this Discord conversation. Include key points, decisions, action items, and unresolved questions.\n\n" + "\n".join(messages[-amount:])
     async with ctx.typing():
         reply = await ai_response(prompt, ctx.author.id, ctx.guild.id if ctx.guild else 0)
     for part in chunk_text("🧠 **Channel Summary**\n" + reply):
@@ -400,6 +669,134 @@ async def study_quiz(ctx, topic: str):
         await ctx.send(part)
 
 
+@bot.command(name="kbadd")
+@commands.has_permissions(manage_guild=True)
+async def kbadd(ctx, *, text: str):
+    if "|" not in text:
+        await ctx.send("Use: `!kbadd Title | Note body`")
+        return
+
+    title, body = text.split("|", 1)
+    with db_connect() as conn:
+        conn.execute(
+            "INSERT INTO knowledge_base (guild_id, title, body, created_by, created_at) VALUES (?, ?, ?, ?, ?)",
+            (str(ctx.guild.id), title.strip()[:120], body.strip()[:3000], str(ctx.author.id), now_iso()),
+        )
+        conn.commit()
+
+    await ctx.send(f"📚 Added to SpringBot knowledge base: **{title.strip()}**")
+
+
+@bot.command(name="kbsearch")
+async def kbsearch(ctx, *, query: str):
+    context = get_knowledge_context(ctx.guild.id if ctx.guild else 0, query, limit=5)
+    if not context:
+        await ctx.send("No matching knowledge-base notes found.")
+        return
+
+    for part in chunk_text("📚 **Knowledge Base Results**\n" + context):
+        await ctx.send(part)
+
+
+@bot.command(name="kblist")
+async def kblist(ctx):
+    with db_connect() as conn:
+        rows = conn.execute(
+            "SELECT id, title, created_at FROM knowledge_base WHERE guild_id=? ORDER BY id DESC LIMIT 20",
+            (str(ctx.guild.id if ctx.guild else 0),),
+        ).fetchall()
+
+    if not rows:
+        await ctx.send("No knowledge-base notes yet. Add one with `!kbadd Title | Note body`.")
+        return
+
+    lines = [f"`{row['id']}` — **{row['title']}**" for row in rows]
+    await ctx.send("📚 **SpringBot Knowledge Base**\n" + "\n".join(lines))
+
+
+@bot.command(name="remind")
+async def remind(ctx, time_value: str = None, *, message: str = None):
+    if not time_value or not message:
+        await ctx.send("Use: `!remind 10m check logs` or `!remind 2h study Security+`")
+        return
+
+    delta = parse_reminder_time(time_value)
+    if not delta:
+        await ctx.send("Use time like `30s`, `10m`, `2h`, or `1d`.")
+        return
+
+    remind_at = datetime.now(timezone.utc) + delta
+
+    with db_connect() as conn:
+        conn.execute(
+            "INSERT INTO reminders (guild_id, channel_id, user_id, remind_at, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (str(ctx.guild.id if ctx.guild else 0), str(ctx.channel.id), str(ctx.author.id), remind_at.isoformat(), message, "open", now_iso()),
+        )
+        conn.commit()
+
+    await ctx.send(f"⏰ Reminder set for <@{ctx.author.id}> in `{time_value}`.")
+
+
+@bot.command(name="dailybrief")
+async def dailybrief(ctx):
+    messages = []
+    async for msg in ctx.channel.history(limit=100):
+        if not msg.author.bot and msg.content:
+            messages.append(f"{msg.author.display_name}: {msg.content}")
+
+    prompt = (
+        "Create a clean daily brief from these recent Discord messages. "
+        "Include wins, problems, action items, and recommended next steps.\n\n"
+        + "\n".join(reversed(messages))
+    )
+    async with ctx.typing():
+        reply = await ai_response(prompt, ctx.author.id, ctx.guild.id if ctx.guild else 0)
+    for part in chunk_text("🗓️ **SpringBot Daily Brief**\n" + reply):
+        await ctx.send(part)
+
+
+@bot.command(name="onboard")
+async def onboard(ctx, target: discord.Member = None):
+    target_text = target.mention if target else "new members"
+    prompt = (
+        f"Create a warm, premium Discord onboarding message for {target_text}. "
+        "Include welcome, how to get help, rules reminder, and first 3 things to do."
+    )
+    async with ctx.typing():
+        reply = await ai_response(prompt, ctx.author.id, ctx.guild.id if ctx.guild else 0)
+    await ctx.send("🌸 **SpringBot Onboarding Draft**\n" + reply)
+
+
+@bot.command(name="projectplan")
+async def projectplan(ctx, *, idea: str):
+    prompt = (
+        f"Turn this idea into a serious build plan: {idea}\n"
+        "Include phases, features, tech stack, commands/endpoints, database tables, deployment steps, and what to build first."
+    )
+    async with ctx.typing():
+        reply = await ai_response(prompt, ctx.author.id, ctx.guild.id if ctx.guild else 0)
+    for part in chunk_text("🚀 **SpringBot Project Plan**\n" + reply):
+        await ctx.send(part)
+
+
+@bot.command(name="brainstorm")
+async def brainstorm(ctx, *, idea: str):
+    prompt = f"Brainstorm 15 strong feature ideas for this project: {idea}. Rank them by impact, difficulty, and monetization potential."
+    async with ctx.typing():
+        reply = await ai_response(prompt, ctx.author.id, ctx.guild.id if ctx.guild else 0)
+    for part in chunk_text("💡 **SpringBot Brainstorm**\n" + reply):
+        await ctx.send(part)
+
+
+@bot.command(name="fixidea")
+async def fixidea(ctx, *, problem: str):
+    prompt = f"Diagnose this problem and give a practical fix plan: {problem}. Include likely causes, checks, commands, and safest next step."
+    async with ctx.typing():
+        reply = await ai_response(prompt, ctx.author.id, ctx.guild.id if ctx.guild else 0)
+    for part in chunk_text("🛠️ **SpringBot Fix Plan**\n" + reply):
+        await ctx.send(part)
+
+
 @bot.command(name="uptime2")
 async def uptime2(ctx):
     await ctx.send(f"SpringBot V2 uptime: `{format_uptime()}`")
@@ -410,12 +807,27 @@ async def on_message(message):
     if message.author.bot:
         return
 
+    if message.guild:
+        automod_status = get_guild_setting(message.guild.id, "automod", "off")
+        if automod_status == "on":
+            severity, reason = detect_risky_message(message.content)
+            if severity:
+                log_incident(message.guild.id, message.channel.id, message.author.id, message.content, reason, severity)
+                try:
+                    if severity == "high":
+                        await message.delete()
+                        await message.channel.send(
+                            f"🛡️ {message.author.mention}, SpringBot removed a risky message: **{reason}**",
+                            delete_after=10,
+                        )
+                except discord.Forbidden:
+                    await message.channel.send("SpringBot detected a risky message but does not have permission to delete it.")
+
     await bot.process_commands(message)
 
     if not message.guild:
         return
 
-    # Lightweight conversation logging only when users mention SpringBot.
     if bot.user and bot.user.mentioned_in(message):
         cleaned = message.content.replace(f"<@{bot.user.id}>", "").replace(f"<@!{bot.user.id}>", "").strip()
         if cleaned:
@@ -425,6 +837,18 @@ async def on_message(message):
             add_conversation(message.author.id, message.guild.id, message.channel.id, "assistant", reply)
             for part in chunk_text(reply):
                 await message.channel.send(part)
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You do not have permission to use that command.")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Missing required information. Try `!v2help`.")
+    elif isinstance(error, commands.CommandNotFound):
+        return
+    else:
+        await ctx.send(f"SpringBot error: `{error}`")
 
 
 if __name__ == "__main__":
