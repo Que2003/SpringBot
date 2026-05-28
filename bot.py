@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import os
 import random
@@ -43,6 +44,15 @@ if FFMPEG_PATH == "ffmpeg" and imageio_ffmpeg is not None:
         FFMPEG_PATH = imageio_ffmpeg.get_ffmpeg_exe()
     except Exception:
         FFMPEG_PATH = "ffmpeg"
+YTDLP_COOKIES_FILE = os.getenv("YTDLP_COOKIES_FILE", "").strip()
+YOUTUBE_COOKIES_BASE64 = os.getenv("YOUTUBE_COOKIES_BASE64", "").strip()
+if not YTDLP_COOKIES_FILE and YOUTUBE_COOKIES_BASE64:
+    try:
+        cookie_path = Path("youtube_cookies.txt")
+        cookie_path.write_bytes(base64.b64decode(YOUTUBE_COOKIES_BASE64))
+        YTDLP_COOKIES_FILE = str(cookie_path)
+    except Exception:
+        YTDLP_COOKIES_FILE = ""
 
 client = OpenAI(api_key=OPENAI_API_KEY) if OpenAI and OPENAI_API_KEY else None
 
@@ -96,9 +106,11 @@ YTDL_OPTIONS = {
     "no_warnings": True,
     "source_address": "0.0.0.0",
     "ignoreconfig": True,
-    "default_search": "ytsearch1",
+    "default_search": "scsearch1",
     "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
 }
+if YTDLP_COOKIES_FILE:
+    YTDL_OPTIONS["cookiefile"] = YTDLP_COOKIES_FILE
 
 FFMPEG_OPTIONS = {
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
@@ -263,6 +275,11 @@ def is_url(text: str) -> bool:
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
+def is_youtube_url(text: str) -> bool:
+    host = urlparse(text).netloc.lower()
+    return "youtube.com" in host or "youtu.be" in host
+
+
 async def join_author_voice(ctx) -> discord.VoiceClient | None:
     if not ctx.author.voice or not ctx.author.voice.channel:
         await ctx.send("Join a voice channel first.")
@@ -287,8 +304,13 @@ async def extract_song(query: str) -> dict:
 
     def run_extract():
         target = query.strip()
+        if is_url(target) and is_youtube_url(target) and not YTDLP_COOKIES_FILE:
+            raise RuntimeError(
+                "YouTube is asking hosted bots to sign in. Try a SoundCloud link/search, "
+                "or set YTDLP_COOKIES_FILE / YOUTUBE_COOKIES_BASE64 for YouTube links."
+            )
         with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ydl:
-            lookup = target if is_url(target) else f"ytsearch1:{target}"
+            lookup = target if is_url(target) else f"scsearch1:{target}"
             info = ydl.extract_info(lookup, download=False)
             if not info:
                 return None
