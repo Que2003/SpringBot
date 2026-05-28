@@ -17,6 +17,11 @@ except ImportError:
     yt_dlp = None
 
 try:
+    import imageio_ffmpeg
+except ImportError:
+    imageio_ffmpeg = None
+
+try:
     from openai import OpenAI
 except ImportError:
     OpenAI = None
@@ -33,6 +38,11 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SPRING_API_URL = os.getenv("SPRING_API_URL", "https://spring-virtual-offiice-pro.com")
 PREFIX = os.getenv("BOT_PREFIX", "!")
 FFMPEG_PATH = os.getenv("FFMPEG_PATH", "ffmpeg")
+if FFMPEG_PATH == "ffmpeg" and imageio_ffmpeg is not None:
+    try:
+        FFMPEG_PATH = imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        FFMPEG_PATH = "ffmpeg"
 
 client = OpenAI(api_key=OPENAI_API_KEY) if OpenAI and OPENAI_API_KEY else None
 
@@ -80,13 +90,14 @@ EIGHT_BALL = [
 ]
 
 YTDL_OPTIONS = {
-    "format": "bestaudio/best",
+    "format": "bestaudio[ext=m4a]/bestaudio/best",
     "noplaylist": True,
     "quiet": True,
     "no_warnings": True,
     "source_address": "0.0.0.0",
     "ignoreconfig": True,
-    "default_search": "scsearch1",
+    "default_search": "ytsearch1",
+    "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
 }
 
 FFMPEG_OPTIONS = {
@@ -223,7 +234,7 @@ def build_help_embed() -> discord.Embed:
         "Economy": "`!balance` `!daily` `!pay`",
         "Fun": "`!8ball` `!coinflip` `!roll` `!quote`",
         "AI": "`!ask` `!spring` `!springchat` `!springtheme`",
-        "Music": "`!join` `!play` `!queue` `!nowplaying` `!pause` `!resume` `!skip` `!stop` `!leave`",
+        "Music": "`!join` `!play <song/link>` `!queue` `!nowplaying` `!pause` `!resume` `!skip` `!stop` `!leave`",
         "Study": "`!aplus` `!aplusports`",
     }
     for name, value in groups.items():
@@ -252,11 +263,6 @@ def is_url(text: str) -> bool:
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
-def is_soundcloud_url(text: str) -> bool:
-    host = urlparse(text).netloc.lower()
-    return "soundcloud.com" in host or "snd.sc" in host
-
-
 async def join_author_voice(ctx) -> discord.VoiceClient | None:
     if not ctx.author.voice or not ctx.author.voice.channel:
         await ctx.send("Join a voice channel first.")
@@ -282,9 +288,8 @@ async def extract_song(query: str) -> dict:
     def run_extract():
         target = query.strip()
         with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ydl:
-            if is_url(target) and not is_soundcloud_url(target):
-                raise RuntimeError("Only SoundCloud links are allowed for direct URLs.")
-            info = ydl.extract_info(target, download=False)
+            lookup = target if is_url(target) else f"ytsearch1:{target}"
+            info = ydl.extract_info(lookup, download=False)
             if not info:
                 return None
             if "entries" in info:
@@ -293,9 +298,6 @@ async def extract_song(query: str) -> dict:
                     return None
                 info = entries[0]
             webpage_url = info.get("webpage_url") or ""
-            extractor = str(info.get("extractor", "")).lower() + str(info.get("extractor_key", "")).lower()
-            if "soundcloud" not in extractor and not is_soundcloud_url(webpage_url):
-                raise RuntimeError("Search result was not from SoundCloud.")
             return {
                 "title": info.get("title", "Unknown title"),
                 "url": info.get("url"),
@@ -908,7 +910,7 @@ async def play_command(ctx, *, query: str):
             await ctx.send(f"Music error: {exc}")
             return
     if not song or not song.get("url"):
-        await ctx.send("I could not find a playable SoundCloud audio source.")
+        await ctx.send("I could not find a playable audio source.")
         return
     song["requested_by"] = ctx.author
     state.queue.append(song)
