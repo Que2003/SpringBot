@@ -3,6 +3,7 @@ PyNaCl
 python-dotenv
 openai
 yt-dlp
+imageio-ffmpeg
 requests
 deep-translator
 aiohttp
