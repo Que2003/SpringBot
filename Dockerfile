@@ -18,4 +18,4 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["python", "springbot_runtime.py"]
+CMD ["python", "springbot_ultra.py"]

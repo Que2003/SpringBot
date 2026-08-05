@@ -2,7 +2,7 @@ name: Validate SpringBot
 
 on:
   push:
-    branches: [main]
+    branches: [main, "agent/**"]
   pull_request:
     branches: [main]
 
@@ -19,7 +19,13 @@ jobs:
           python-version: "3.12"
 
       - name: Validate Python syntax
-        run: python -m py_compile bot_v2.py springbot_runtime.py
+        run: >-
+          python -m py_compile
+          bot_v2.py
+          springbot_runtime.py
+          springbot_ultra.py
+          cogs/music.py
+          cogs/entertainment.py
 
       - name: Validate Railway configuration
         run: python -m json.tool railway.json > /dev/null
